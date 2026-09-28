@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>好き顔ランキング</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#f7f7f9;color:#222}
+header{padding:22px 18px 12px;text-align:center;background:white;position:sticky;top:0;z-index:5;border-bottom:1px solid #eee}
+h1{font-size:24px;margin:0 0 6px}.sub{font-size:13px;color:#777}
+main{max-width:720px;margin:auto;padding:18px}
+.panel{background:white;border-radius:18px;padding:18px;box-shadow:0 4px 18px #0000000b;margin-bottom:16px}
+button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer}
+.primary{background:#222;color:#fff}.light{background:#eee}.danger{background:#ffe8e8;color:#b00020}
+input[type=file]{display:none}.upload{display:block;border:2px dashed #ccc;border-radius:16px;padding:28px;text-align:center;cursor:pointer}
+#thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#eee}.thumb img{width:100%;height:100%;object-fit:cover}.x{position:absolute;right:4px;top:4px;background:#000b;color:white;width:25px;height:25px;border-radius:50%;padding:0}
+.hidden{display:none!important}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}.face{border:0;background:white;padding:0;overflow:hidden;border-radius:18px;box-shadow:0 3px 14px #0002}.face img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}.face .name{padding:11px;font-size:14px;font-weight:700}
+.vs{text-align:center;color:#999;font-size:12px;margin:12px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin:10px 0}.bar{height:100%;background:#222;width:0}
+.rankrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eee}.rank{width:30px;font-weight:800;text-align:center}.rankrow img{width:58px;height:72px;object-fit:cover;border-radius:10px}.score{margin-left:auto;color:#777;font-size:13px}
+.small{font-size:12px;color:#777}.actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:500px){main{padding:12px}.panel{padding:14px}.thumbs{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>♡ 好き顔ランキング</h1><div class="sub">写真を入れて、2人ずつ「好き」を選ぶだけ</div></header>
+<main>
+<section id="setup" class="panel">
+  <label class="upload" for="files" role="button" tabindex="0">
+    <div style="font-size:30px">＋</div>
+    <b>好きな顔の写真を追加</b>
+    <div class="small">2枚以上・何枚でもOK（この端末内だけで処理）</div>
+  </label>
+  <div class="actions" style="margin-top:12px">
+    <label class="primary" style="display:inline-block;padding:12px 16px;border-radius:12px;cursor:pointer">
+      📷 写真アプリから追加
+      <input id="photoFiles" type="file" accept="image/*" multiple style="display:none">
+    </label>
+    <label class="light" style="display:inline-block;padding:12px 16px;border-radius:12px;cursor:pointer">
+      📁 ファイル・フォルダから追加
+      <input id="folderFiles" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple style="display:none">
+    </label>
+  </div>
+  <div id="thumbs"></div>
+  <div class="actions" style="margin-top:14px">
+    <button class="primary" id="start">ランキング開始</button>
+    <button class="light" id="clear">全部削除</button>
+  </div>
+</section>
+
+<section id="game" class="panel hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <b>どっちの顔が好き？</b><span class="small" id="count"></span>
+  </div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="match" id="match"></div>
+  <div class="vs">タップした方が勝ち</div>
+</section>
+
+<section id="result" class="panel hidden">
+  <h2 style="margin-top:0">🏆 好き顔ランキング</h2>
+  <div id="ranking"></div>
+  <div class="actions" style="margin-top:16px">
+    <button class="primary" id="again">もう一度比較</button>
+    <button class="light" id="back">写真を編集</button>
+  </div>
+</section>
+</main>
+<script>
+let people=[], comparisons=[], done=0;
+
+const $=id=>document.getElementById(id);
+async function addSelectedFiles(fileList){
+  const files=[...fileList];
+  if(!files.length) return;
+  for(const file of files){
+    const name=(file.name||"").toLowerCase();
+    const isImage=file.type.startsWith("image/") ||
+      /\\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(name);
+    if(!isImage) continue;
+    const url=URL.createObjectURL(file);
+    people.push({
+      id:(crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random()),
+      url,name:file.name||"写真",score:0,wins:0,losses:0
+    });
+  }
+  renderThumbs();
+}
+
+$("photoFiles").addEventListener("change", e=>{
+  addSelectedFiles(e.target.files);
+  e.target.value="";
+});
+$("folderFiles").addEventListener("change", e=>{
+  addSelectedFiles(e.target.files);
+  e.target.value="";
+});
+
+function renderThumbs(){
+  $("thumbs").innerHTML=people.map((p,i)=>`<div class="thumb"><img src="${p.url}"><button class="x" onclick="removePerson(${i})">×</button></div>`).join("");
+}
+window.removePerson=i=>{URL.revokeObjectURL(people[i].url);people.splice(i,1);renderThumbs()};
+$("clear").onclick=()=>{people.forEach(p=>URL.revokeObjectURL(p.url));people=[];renderThumbs()};
+$("start").onclick=()=>{
+  if(people.length<2){alert("写真を2枚以上追加してください");return}
+  people.forEach(p=>{p.score=1000;p.wins=0;p.losses=0});
+  // 全組み合わせを比較する。枚数が多い場合でも、シャッフル順で比較。
+  comparisons=[];
+  for(let i=0;i<people.length;i++)for(let j=i+1;j<people.length;j++)comparisons.push([i,j]);
+  comparisons.sort(()=>Math.random()-.5); done=0;
+  $("setup").classList.add("hidden");$("result").classList.add("hidden");$("game").classList.remove("hidden");
+  showMatch();
+};
+function showMatch(){
+  if(done>=comparisons.length){finish();return}
+  const [a,b]=comparisons[done],pa=people[a],pb=people[b];
+  $("count").textContent=`${done+1} / ${comparisons.length}`;
+  $("bar").style.width=`${done/comparisons.length*100}%`;
+  $("match").innerHTML=[pa,pb].map((p,k)=>`<button class="face" onclick="choose(${k})"><img src="${p.url}"><div class="name">${k===0?"A":"B"}</div></button>`).join("");
+}
+window.choose=k=>{
+  const [a,b]=comparisons[done],winner=k===0?people[a]:people[b],loser=k===0?people[b]:people[a];
+  // Elo方式
+  const ea=1/(1+Math.pow(10,(loser.score-winner.score)/400));
+  winner.score+=32*(1-ea);loser.score-=32*(1-ea);winner.wins++;loser.losses++;
+  done++;showMatch();
+};
+function finish(){
+  $("game").classList.add("hidden");$("result").classList.remove("hidden");
+  const sorted=[...people].sort((a,b)=>b.score-a.score);
+  const top9=sorted.slice(0,9);
+  const rest=sorted.slice(9);
+  $("ranking").innerHTML=top9.map((p,i)=>`
+    <div class="rankrow"><div class="rank">${i+1}</div><img src="${p.url}">
+    <div><b>${i===0?"一番好き♡":i===1?"かなり好き":i===2?"好き":"好き度 "+Math.round(p.score)}</b>
+    <div class="small">${p.wins}勝 / ${p.losses}敗</div></div>
+    <div class="score">${Math.round(p.score)}</div></div>`).join("") +
+    (rest.length ? `<details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700;padding:8px">10位以下を見る（${rest.length}人）</summary>
+    ${rest.map((p,i)=>`<div class="rankrow"><div class="rank">${i+10}</div><img src="${p.url}">
+    <div><b>好き度 ${Math.round(p.score)}</b><div class="small">${p.wins}勝 / ${p.losses}敗</div></div>
+    <div class="score">${Math.round(p.score)}</div></div>`).join("")}</details>` : "");
+  $("bar").style.width="100%";
+}
+$("again").onclick=()=>{$("result").classList.add("hidden");$("game").classList.remove("hidden");$("start").click()};
+$("back").onclick=()=>{$("result").classList.add("hidden");$("setup").classList.remove("hidden")};
+</script>
+</body>
+</html>
