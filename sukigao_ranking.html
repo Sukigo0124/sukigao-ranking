@@ -4,145 +4,973 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>好き顔ランキング</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#f7f7f9;color:#222}
-header{padding:22px 18px 12px;text-align:center;background:white;position:sticky;top:0;z-index:5;border-bottom:1px solid #eee}
-h1{font-size:24px;margin:0 0 6px}.sub{font-size:13px;color:#777}
-main{max-width:720px;margin:auto;padding:18px}
-.panel{background:white;border-radius:18px;padding:18px;box-shadow:0 4px 18px #0000000b;margin-bottom:16px}
-button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer}
-.primary{background:#222;color:#fff}.light{background:#eee}.danger{background:#ffe8e8;color:#b00020}
-input[type=file]{display:none}.upload{display:block;border:2px dashed #ccc;border-radius:16px;padding:28px;text-align:center;cursor:pointer}
-#thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#eee}.thumb img{width:100%;height:100%;object-fit:cover}.x{position:absolute;right:4px;top:4px;background:#000b;color:white;width:25px;height:25px;border-radius:50%;padding:0}
-.hidden{display:none!important}
-.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}.face{border:0;background:white;padding:0;overflow:hidden;border-radius:18px;box-shadow:0 3px 14px #0002}.face img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}.face .name{padding:11px;font-size:14px;font-weight:700}
-.vs{text-align:center;color:#999;font-size:12px;margin:12px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin:10px 0}.bar{height:100%;background:#222;width:0}
-.rankrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eee}.rank{width:30px;font-weight:800;text-align:center}.rankrow img{width:58px;height:72px;object-fit:cover;border-radius:10px}.score{margin-left:auto;color:#777;font-size:13px}
-.small{font-size:12px;color:#777}.actions{display:flex;gap:8px;flex-wrap:wrap}
-@media(max-width:500px){main{padding:12px}.panel{padding:14px}.thumbs{grid-template-columns:repeat(4,1fr)}}
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  background:#f7f7f9;
+  color:#222;
+}
+
+header{
+  background:#fff;
+  padding:22px 16px 14px;
+  text-align:center;
+  border-bottom:1px solid #eee;
+}
+
+h1{
+  margin:0 0 6px;
+  font-size:25px;
+}
+
+.sub{
+  color:#777;
+  font-size:13px;
+}
+
+main{
+  max-width:760px;
+  margin:auto;
+  padding:16px;
+}
+
+.panel{
+  background:#fff;
+  border-radius:18px;
+  padding:18px;
+  margin-bottom:16px;
+  box-shadow:0 4px 18px #0000000b;
+}
+
+.hidden{
+  display:none!important;
+}
+
+button{
+  border:0;
+  border-radius:13px;
+  padding:13px 17px;
+  font-size:15px;
+  font-weight:700;
+}
+
+.primary{
+  background:#222;
+  color:#fff;
+}
+
+.light{
+  background:#eee;
+  color:#222;
+}
+
+.center{
+  text-align:center;
+}
+
+.info{
+  color:#777;
+  font-size:13px;
+  line-height:1.7;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-top:16px;
+}
+
+.photo{
+  position:relative;
+  border:3px solid transparent;
+  border-radius:16px;
+  overflow:hidden;
+  background:#eee;
+  padding:0;
+  box-shadow:0 3px 12px #0001;
+}
+
+.photo.selected{
+  border-color:#222;
+  transform:scale(.98);
+}
+
+.photo img{
+  width:100%;
+  aspect-ratio:3/4;
+  object-fit:cover;
+  display:block;
+}
+
+.photo .mark{
+  position:absolute;
+  right:8px;
+  top:8px;
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  background:#fff;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+}
+
+.photo.selected .mark{
+  display:flex;
+}
+
+.progress{
+  height:7px;
+  background:#eee;
+  border-radius:99px;
+  overflow:hidden;
+  margin:12px 0 16px;
+}
+
+.bar{
+  height:100%;
+  background:#222;
+  width:0;
+  transition:.2s;
+}
+
+.league{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+
+.league button{
+  padding:0;
+  background:white;
+  overflow:hidden;
+  box-shadow:0 3px 14px #0002;
+}
+
+.league img{
+  width:100%;
+  aspect-ratio:3/4;
+  object-fit:cover;
+  display:block;
+}
+
+.league .label{
+  padding:11px;
+}
+
+.resultCard{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid #eee;
+}
+
+.resultCard img{
+  width:62px;
+  height:78px;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+.rank{
+  width:35px;
+  font-weight:900;
+  text-align:center;
+  font-size:18px;
+}
+
+.resultInfo{
+  flex:1;
+}
+
+.top1{
+  font-size:20px;
+  font-weight:900;
+}
+
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+@media(max-width:500px){
+  main{
+    padding:11px;
+  }
+
+  .panel{
+    padding:14px;
+  }
+
+  .grid{
+    gap:7px;
+  }
+
+  .league{
+    gap:7px;
+  }
+}
 </style>
 </head>
+
 <body>
-<header><h1>♡ 好き顔ランキング</h1><div class="sub">写真を入れて、2人ずつ「好き」を選ぶだけ</div></header>
+
+<header>
+  <h1>♡ 好き顔ランキング</h1>
+  <div class="sub">あなたが一番好きな顔を決めよう</div>
+</header>
+
 <main>
-<section id="setup" class="panel">
-  <label class="upload" for="files" role="button" tabindex="0">
-    <div style="font-size:30px">＋</div>
-    <b>好きな顔の写真を追加</b>
-    <div class="small">2枚以上・何枚でもOK（この端末内だけで処理）</div>
-  </label>
-  <div class="actions" style="margin-top:12px">
-    <label class="primary" style="display:inline-block;padding:12px 16px;border-radius:12px;cursor:pointer">
-      📷 写真アプリから追加
-      <input id="photoFiles" type="file" accept="image/*" multiple style="display:none">
-    </label>
-    <label class="light" style="display:inline-block;padding:12px 16px;border-radius:12px;cursor:pointer">
-      📁 ファイル・フォルダから追加
-      <input id="folderFiles" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple style="display:none">
-    </label>
-  </div>
-  <div id="thumbs"></div>
-  <div class="actions" style="margin-top:14px">
-    <button class="primary" id="start">ランキング開始</button>
-    <button class="light" id="clear">全部削除</button>
-  </div>
+
+<!-- START -->
+
+<section id="home" class="panel center">
+
+  <h2>好き顔ランキング</h2>
+
+  <p class="info">
+    写真の中から好きな顔を選んでください。<br>
+    最後にあなた専用のTOP9が決まります。
+  </p>
+
+  <button
+    class="primary"
+    id="startButton">
+    ランキング開始
+  </button>
+
 </section>
 
-<section id="game" class="panel hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <b>どっちの顔が好き？</b><span class="small" id="count"></span>
+
+<!-- QUALIFY -->
+
+<section id="qualify" class="panel hidden">
+
+  <div>
+    <b id="qualifyTitle">予選</b>
   </div>
-  <div class="progress"><div class="bar" id="bar"></div></div>
-  <div class="match" id="match"></div>
-  <div class="vs">タップした方が勝ち</div>
+
+  <div class="progress">
+    <div id="qualifyBar" class="bar"></div>
+  </div>
+
+  <div class="info">
+    この中から<strong>好きな写真を何枚でも</strong>選んでください。
+  </div>
+
+  <div
+    id="qualifyGrid"
+    class="grid">
+  </div>
+
+  <div class="actions">
+
+    <button
+      id="qualifyNext"
+      class="primary">
+      選択を決定
+    </button>
+
+  </div>
+
 </section>
+
+
+<!-- LEAGUE -->
+
+<section id="league" class="panel hidden">
+
+  <div>
+    <b>予選通過リーグ</b>
+  </div>
+
+  <p class="info">
+    3枚の中から、<strong>一番好きな1枚</strong>を選んでください。
+  </p>
+
+  <div class="progress">
+    <div id="leagueBar" class="bar"></div>
+  </div>
+
+  <div
+    id="leagueGrid"
+    class="league">
+  </div>
+
+</section>
+
+
+<!-- RESULT -->
 
 <section id="result" class="panel hidden">
-  <h2 style="margin-top:0">🏆 好き顔ランキング</h2>
-  <div id="ranking"></div>
-  <div class="actions" style="margin-top:16px">
-    <button class="primary" id="again">もう一度比較</button>
-    <button class="light" id="back">写真を編集</button>
+
+  <div class="center">
+
+    <div class="top1">
+      🏆 あなたの好き顔ランキング
+    </div>
+
+    <p class="info">
+      あなたが選んだ結果です
+    </p>
+
   </div>
+
+  <div id="ranking"></div>
+
+  <div class="actions">
+
+    <button
+      id="retry"
+      class="primary">
+      もう一度やる
+    </button>
+
+  </div>
+
 </section>
+
 </main>
+
+
 <script>
-let people=[], comparisons=[], done=0;
+
+/*
+==================================================
+写真設定
+==================================================
+
+GitHubの photos フォルダに
+
+01.jpg
+02.jpg
+03.jpg
+
+のように写真を入れてください。
+
+ここにファイル名を追加します。
+
+例：
+
+"photos/01.jpg"
+
+==================================================
+*/
+
+const PHOTO_FILES = [
+
+  "photos/01.jpg",
+  "photos/02.jpg",
+  "photos/03.jpg",
+  "photos/04.jpg",
+  "photos/05.jpg",
+  "photos/06.jpg",
+  "photos/07.jpg",
+  "photos/08.jpg",
+  "photos/09.jpg",
+  "photos/10.jpg",
+  "photos/11.jpg",
+  "photos/12.jpg"
+
+];
+
+
+/*
+写真データ
+*/
+
+let photos=[];
+
+let qualifyGroups=[];
+
+let qualifyIndex=0;
+
+let selected=[];
+
+let finalists=[];
+
+let leagueMatches=[];
+
+let leagueIndex=0;
+
+let wins={};
+
+
+/*
+画面取得
+*/
 
 const $=id=>document.getElementById(id);
-async function addSelectedFiles(fileList){
-  const files=[...fileList];
-  if(!files.length) return;
-  for(const file of files){
-    const name=(file.name||"").toLowerCase();
-    const isImage=file.type.startsWith("image/") ||
-      /\\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(name);
-    if(!isImage) continue;
-    const url=URL.createObjectURL(file);
-    people.push({
-      id:(crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random()),
-      url,name:file.name||"写真",score:0,wins:0,losses:0
-    });
+
+
+/*
+写真読み込み
+*/
+
+function loadPhotos(){
+
+  photos=PHOTO_FILES.map(
+    (file,index)=>({
+
+      id:index,
+
+      file:file,
+
+      url:file,
+
+      wins:0
+
+    })
+  );
+
+}
+
+
+/*
+開始
+*/
+
+$("startButton").onclick=()=>{
+
+  if(photos.length<3){
+
+    alert("写真を3枚以上登録してください。");
+
+    return;
+
   }
-  renderThumbs();
+
+  startQualify();
+
+};
+
+
+/*
+=========================================
+予選
+=========================================
+*/
+
+function startQualify(){
+
+  qualifyGroups=[];
+
+  qualifyIndex=0;
+
+  finalists=[];
+
+  selected=[];
+
+  /*
+  写真をシャッフル
+  */
+
+  const shuffled=[
+    ...photos
+  ].sort(
+    ()=>Math.random()-.5
+  );
+
+
+  /*
+  3〜6枚のグループを作る
+  */
+
+  let i=0;
+
+  while(i<shuffled.length){
+
+    const remaining=
+      shuffled.length-i;
+
+    let size;
+
+    if(remaining<=6){
+
+      size=remaining;
+
+      if(size<3 && qualifyGroups.length){
+
+        /*
+        最後が2枚になった場合は
+        前のグループから1枚移動
+        */
+
+        const last=
+          qualifyGroups[
+            qualifyGroups.length-1
+          ];
+
+        if(last.length>3){
+
+          size=3;
+
+          const moved=
+            last.pop();
+
+          qualifyGroups.push(
+            shuffled.slice(i,i+1)
+          );
+
+          qualifyGroups[
+            qualifyGroups.length-1
+          ].push(moved);
+
+          i++;
+
+          continue;
+        }
+      }
+
+    }else{
+
+      size=
+        Math.floor(
+          Math.random()*4
+        )+3;
+
+    }
+
+    qualifyGroups.push(
+      shuffled.slice(i,i+size)
+    );
+
+    i+=size;
+
+  }
+
+
+  $("home").classList.add("hidden");
+
+  $("qualify").classList.remove("hidden");
+
+  showQualify();
+
 }
 
-$("photoFiles").addEventListener("change", e=>{
-  addSelectedFiles(e.target.files);
-  e.target.value="";
-});
-$("folderFiles").addEventListener("change", e=>{
-  addSelectedFiles(e.target.files);
-  e.target.value="";
-});
 
-function renderThumbs(){
-  $("thumbs").innerHTML=people.map((p,i)=>`<div class="thumb"><img src="${p.url}"><button class="x" onclick="removePerson(${i})">×</button></div>`).join("");
+/*
+予選表示
+*/
+
+function showQualify(){
+
+  selected=[];
+
+  const group=
+    qualifyGroups[
+      qualifyIndex
+    ];
+
+  $("qualifyTitle").textContent=
+    `予選 ${qualifyIndex+1} / ${qualifyGroups.length}`;
+
+  $("qualifyBar").style.width=
+    `${qualifyIndex/qualifyGroups.length*100}%`;
+
+
+  $("qualifyGrid").innerHTML=
+    group.map(
+      p=>`
+
+      <button
+        class="photo"
+        data-id="${p.id}"
+        onclick="toggleSelect(${p.id})">
+
+        <img src="${p.url}">
+
+        <span class="mark">
+          ✓
+        </span>
+
+      </button>
+
+      `
+    ).join("");
+
 }
-window.removePerson=i=>{URL.revokeObjectURL(people[i].url);people.splice(i,1);renderThumbs()};
-$("clear").onclick=()=>{people.forEach(p=>URL.revokeObjectURL(p.url));people=[];renderThumbs()};
-$("start").onclick=()=>{
-  if(people.length<2){alert("写真を2枚以上追加してください");return}
-  people.forEach(p=>{p.score=1000;p.wins=0;p.losses=0});
-  // 全組み合わせを比較する。枚数が多い場合でも、シャッフル順で比較。
-  comparisons=[];
-  for(let i=0;i<people.length;i++)for(let j=i+1;j<people.length;j++)comparisons.push([i,j]);
-  comparisons.sort(()=>Math.random()-.5); done=0;
-  $("setup").classList.add("hidden");$("result").classList.add("hidden");$("game").classList.remove("hidden");
-  showMatch();
+
+
+/*
+予選選択
+*/
+
+window.toggleSelect=id=>{
+
+  const button=
+    document.querySelector(
+      `.photo[data-id="${id}"]`
+    );
+
+  if(selected.includes(id)){
+
+    selected=
+      selected.filter(
+        x=>x!==id
+      );
+
+    button.classList.remove(
+      "selected"
+    );
+
+  }else{
+
+    selected.push(id);
+
+    button.classList.add(
+      "selected"
+    );
+
+  }
+
 };
-function showMatch(){
-  if(done>=comparisons.length){finish();return}
-  const [a,b]=comparisons[done],pa=people[a],pb=people[b];
-  $("count").textContent=`${done+1} / ${comparisons.length}`;
-  $("bar").style.width=`${done/comparisons.length*100}%`;
-  $("match").innerHTML=[pa,pb].map((p,k)=>`<button class="face" onclick="choose(${k})"><img src="${p.url}"><div class="name">${k===0?"A":"B"}</div></button>`).join("");
-}
-window.choose=k=>{
-  const [a,b]=comparisons[done],winner=k===0?people[a]:people[b],loser=k===0?people[b]:people[a];
-  // Elo方式
-  const ea=1/(1+Math.pow(10,(loser.score-winner.score)/400));
-  winner.score+=32*(1-ea);loser.score-=32*(1-ea);winner.wins++;loser.losses++;
-  done++;showMatch();
+
+
+/*
+予選決定
+*/
+
+$("qualifyNext").onclick=()=>{
+
+  if(selected.length===0){
+
+    alert(
+      "最低1枚は選んでください。"
+    );
+
+    return;
+
+  }
+
+
+  selected.forEach(id=>{
+
+    const p=
+      photos.find(
+        x=>x.id===id
+      );
+
+    if(p && !finalists.includes(p)){
+
+      finalists.push(p);
+
+    }
+
+  });
+
+
+  qualifyIndex++;
+
+
+  if(
+    qualifyIndex<
+    qualifyGroups.length
+  ){
+
+    showQualify();
+
+  }else{
+
+    startLeague();
+
+  }
+
 };
-function finish(){
-  $("game").classList.add("hidden");$("result").classList.remove("hidden");
-  const sorted=[...people].sort((a,b)=>b.score-a.score);
-  const top9=sorted.slice(0,9);
-  const rest=sorted.slice(9);
-  $("ranking").innerHTML=top9.map((p,i)=>`
-    <div class="rankrow"><div class="rank">${i+1}</div><img src="${p.url}">
-    <div><b>${i===0?"一番好き♡":i===1?"かなり好き":i===2?"好き":"好き度 "+Math.round(p.score)}</b>
-    <div class="small">${p.wins}勝 / ${p.losses}敗</div></div>
-    <div class="score">${Math.round(p.score)}</div></div>`).join("") +
-    (rest.length ? `<details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700;padding:8px">10位以下を見る（${rest.length}人）</summary>
-    ${rest.map((p,i)=>`<div class="rankrow"><div class="rank">${i+10}</div><img src="${p.url}">
-    <div><b>好き度 ${Math.round(p.score)}</b><div class="small">${p.wins}勝 / ${p.losses}敗</div></div>
-    <div class="score">${Math.round(p.score)}</div></div>`).join("")}</details>` : "");
-  $("bar").style.width="100%";
+
+
+/*
+=========================================
+リーグ
+=========================================
+*/
+
+function startLeague(){
+
+  $("qualify").classList.add("hidden");
+
+  /*
+  選ばれた写真が少なすぎる場合
+  */
+
+  if(finalists.length===1){
+
+    showFinalResult(
+      finalists
+    );
+
+    return;
+
+  }
+
+
+  /*
+  2枚しかない場合
+  */
+
+  if(finalists.length===2){
+
+    leagueMatches=[
+      finalists
+    ];
+
+  }else{
+
+    /*
+    3枚ずつグループを作る
+    */
+
+    leagueMatches=[];
+
+    const shuffled=[
+      ...finalists
+    ].sort(
+      ()=>Math.random()-.5
+    );
+
+    for(
+      let i=0;
+      i<shuffled.length;
+      i+=3
+    ){
+
+      const group=
+        shuffled.slice(
+          i,
+          i+3
+        );
+
+      /*
+      2枚になった場合は
+      最後のグループと混ぜる
+      */
+
+      if(group.length===2){
+
+        const previous=
+          leagueMatches[
+            leagueMatches.length-1
+          ];
+
+        if(previous && previous.length===3){
+
+          group.push(
+            previous.pop()
+          );
+
+        }
+
+      }
+
+      leagueMatches.push(group);
+
+    }
+
+  }
+
+
+  leagueIndex=0;
+
+  wins={};
+
+  finalists.forEach(
+    p=>wins[p.id]=0
+  );
+
+  $("league").classList.remove(
+    "hidden"
+  );
+
+  showLeague();
+
 }
-$("again").onclick=()=>{$("result").classList.add("hidden");$("game").classList.remove("hidden");$("start").click()};
-$("back").onclick=()=>{$("result").classList.add("hidden");$("setup").classList.remove("hidden")};
+
+
+/*
+リーグ表示
+*/
+
+function showLeague(){
+
+  if(
+    leagueIndex>=
+    leagueMatches.length
+  ){
+
+    finishLeague();
+
+    return;
+
+  }
+
+
+  const group=
+    leagueMatches[
+      leagueIndex
+    ];
+
+
+  $("leagueBar").style.width=
+    `${leagueIndex/leagueMatches.length*100}%`;
+
+
+  $("leagueGrid").innerHTML=
+    group.map(
+      p=>`
+
+      <button
+        onclick="chooseLeague(${p.id})">
+
+        <img src="${p.url}">
+
+        <div class="label">
+          選ぶ
+        </div>
+
+      </button>
+
+      `
+    ).join("");
+
+}
+
+
+/*
+リーグ選択
+*/
+
+window.chooseLeague=id=>{
+
+  wins[id]=(wins[id]||0)+1;
+
+  leagueIndex++;
+
+  showLeague();
+
+};
+
+
+/*
+=========================================
+結果
+=========================================
+*/
+
+function finishLeague(){
+
+  $("league").classList.add(
+    "hidden"
+  );
+
+
+  /*
+  勝利数で並べる
+  */
+
+  const sorted=[
+    ...finalists
+  ].sort(
+    (a,b)=>
+      (wins[b.id]||0)-
+      (wins[a.id]||0)
+  );
+
+
+  /*
+  TOP9
+  */
+
+  showFinalResult(
+    sorted.slice(0,9)
+  );
+
+}
+
+
+/*
+結果表示
+*/
+
+function showFinalResult(result){
+
+  $("result").classList.remove(
+    "hidden"
+  );
+
+
+  $("ranking").innerHTML=
+    result.map(
+      (p,i)=>`
+
+      <div class="resultCard">
+
+        <div class="rank">
+          ${i===0?"🥇":
+            i===1?"🥈":
+            i===2?"🥉":
+            i+1}
+        </div>
+
+        <img src="${p.url}">
+
+        <div class="resultInfo">
+
+          <b>
+            ${i+1}位
+          </b>
+
+          ${
+            i===0
+            ? `<div class="small">一番好き♡</div>`
+            : ""
+          }
+
+        </div>
+
+      </div>
+
+      `
+    ).join("");
+
+}
+
+
+/*
+=========================================
+もう一度
+=========================================
+*/
+
+$("retry").onclick=()=>{
+
+  $("result").classList.add(
+    "hidden"
+  );
+
+  $("home").classList.remove(
+    "hidden"
+  );
+
+};
+
+
+/*
+開始時に写真を読み込む
+*/
+
+loadPhotos();
+
 </script>
+
 </body>
 </html>
+  
