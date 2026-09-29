@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>好き顔ランキング</title>
   <style>
     * { box-sizing: border-box; }
@@ -202,7 +202,7 @@
 
     <section id="league" class="panel hidden">
       <div><b>予選通過リーグ</b></div>
-      <p class="info">3枚の中から、<strong>一番好きな1枚</strong>を選んでください。</p>
+      <p class="info">3枚の中から、<strong>1枚だけ選んでください。</strong></p>
       <div class="progress"><div id="leagueBar" class="bar"></div></div>
       <div id="leagueGrid" class="league"></div>
     </section>
@@ -397,30 +397,43 @@
       }
     });
 
+    function buildLeaguePool() {
+      const selected = [...state.finalists];
+      const nonSelected = state.photos.filter((p) => !selected.some((s) => s.id === p.id));
+      const pool = shuffle([...selected, ...nonSelected]);
+
+      if (pool.length < 3) {
+        return shuffle([...pool, ...state.photos.filter((p) => !pool.some((x) => x.id === p.id))].slice(0, 3));
+      }
+
+      const padded = [...pool];
+      while (padded.length % 3 !== 0) {
+        const candidate = shuffle(state.photos)[0];
+        if (!padded.some((p) => p.id === candidate.id)) {
+          padded.push(candidate);
+        }
+      }
+
+      return shuffle(padded);
+    }
+
     function startLeague() {
       $("qualify").classList.add("hidden");
 
-      if (state.finalists.length === 0) {
-        state.finalists = [...state.photos].slice(0, Math.min(9, state.photos.length));
-      }
-
-      if (state.finalists.length === 1) {
-        showFinalResult(state.finalists);
-        return;
-      }
+      const base = state.finalists.length ? state.finalists : [...state.photos].slice(0, Math.min(9, state.photos.length));
+      const pool = buildLeaguePool(base);
 
       state.leagueMatches = [];
-      const names = shuffle(state.finalists);
-
-      for (let i = 0; i < names.length; i++) {
-        for (let j = i + 1; j < names.length; j++) {
-          state.leagueMatches.push([names[i], names[j]]);
+      for (let i = 0; i < pool.length; i += 3) {
+        const group = pool.slice(i, i + 3);
+        if (group.length === 3) {
+          state.leagueMatches.push(group);
         }
       }
 
       state.leagueIndex = 0;
       state.wins = {};
-      state.finalists.forEach((p) => {
+      state.photos.forEach((p) => {
         state.wins[p.id] = 0;
       });
 
@@ -454,8 +467,10 @@
     function finishLeague() {
       $("league").classList.add("hidden");
 
-      const sorted = [...state.finalists].sort((a, b) => (state.wins[b.id] || 0) - (state.wins[a.id] || 0));
-      showFinalResult(sorted.slice(0, Math.min(9, sorted.length)));
+      const sorted = [...state.photos].sort((a, b) => (state.wins[b.id] || 0) - (state.wins[a.id] || 0));
+      const finalists = sorted.filter((p) => (state.wins[p.id] || 0) > 0);
+      const finalSet = finalists.length ? finalists : sorted.slice(0, Math.min(9, sorted.length));
+      showFinalResult(finalSet.slice(0, Math.min(9, finalSet.length)));
     }
 
     function showFinalResult(result) {
