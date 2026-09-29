@@ -186,6 +186,18 @@
       gap: 8px;
       flex-wrap: wrap;
       margin-top: 16px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .actions-left {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions-right {
+      display: flex;
+      gap: 8px;
     }
 
     .resultGrid {
@@ -249,6 +261,22 @@
       .resultGrid {
         gap: 8px;
       }
+
+      .actions {
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .actions-left,
+      .actions-right {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .actions-left button,
+      .actions-right button {
+        flex: 1;
+      }
     }
   </style>
 </head>
@@ -299,13 +327,17 @@
 
     <div class="actions">
 
-      <button id="qualifyBack" class="secondary">
-        ← 1つ前
-      </button>
+      <div class="actions-left">
+        <button id="qualifyBack" class="secondary">
+          ← 1つ前
+        </button>
+      </div>
 
-      <button id="qualifyNext" class="primary">
-        選択を決定
-      </button>
+      <div class="actions-right">
+        <button id="qualifyNext" class="primary">
+          選択を決定 →
+        </button>
+      </div>
 
     </div>
 
@@ -335,9 +367,11 @@
 
     <div class="actions">
 
-      <button id="leagueBack" class="secondary">
-        ← 1つ前
-      </button>
+      <div class="actions-left">
+        <button id="leagueBack" class="secondary">
+          ← 1つ前
+        </button>
+      </div>
 
     </div>
 
@@ -363,13 +397,17 @@
 
     <div class="actions">
 
-      <button id="resultBack" class="secondary">
-        ← リーグに戻る
-      </button>
+      <div class="actions-left">
+        <button id="resultBack" class="secondary">
+          ← リーグに戻る
+        </button>
+      </div>
 
-      <button id="retry" class="primary">
-        もう一度やる
-      </button>
+      <div class="actions-right">
+        <button id="retry" class="primary">
+          もう一度やる →
+        </button>
+      </div>
 
     </div>
 
