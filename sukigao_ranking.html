@@ -122,26 +122,65 @@
     .league .label {
       padding: 11px;
     }
-    .resultCard {
-      display: flex;
-      align-items: center;
+    .resultGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
+      margin-top: 18px;
+    }
+    .resultCard {
+      position: relative;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid #eee;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.04);
     }
     .resultCard img {
-      width: 62px;
-      height: 78px;
+      width: 100%;
+      aspect-ratio: 3 / 4;
       object-fit: cover;
-      border-radius: 10px;
+      display: block;
     }
-    .rank {
-      width: 35px;
-      font-weight: 900;
-      text-align: center;
+    .rankBadge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      min-width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.78);
+      color: #fff;
       font-size: 18px;
+      font-weight: 900;
+      border: 2px solid rgba(255,255,255,0.7);
     }
-    .resultInfo { flex: 1; }
+    .resultInfo {
+      padding: 12px 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.95));
+    }
+    .resultInfo strong {
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    .resultInfo .small {
+      color: #666;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .resultScore {
+      color: #222;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
     .top1 { font-size: 20px; font-weight: 900; }
     .actions {
       display: flex;
@@ -154,13 +193,14 @@
       .panel { padding: 14px; }
       .grid { gap: 7px; }
       .league { gap: 7px; }
+      .resultGrid { gap: 8px; }
     }
   </style>
 </head>
 <body>
   <header>
     <h1>♡ 好き顔ランキング</h1>
-    <div class="sub">あなた��一番好きな顔を決めよう</div>
+    <div class="sub">あなたが一番好きな顔を決めよう</div>
   </header>
 
   <main>
@@ -168,7 +208,7 @@
       <h2>好き顔ランキング</h2>
       <p class="info">
         写真の中から好きな顔を選んでください。<br>
-        最後にあなた専用のTOP9が決まります。
+        最後にあなた専用のランキングが決まります。
       </p>
       <button class="primary" id="startButton">ランキング開始</button>
     </section>
@@ -176,7 +216,7 @@
     <section id="qualify" class="panel hidden">
       <div><b id="qualifyTitle">予選</b></div>
       <div class="progress"><div id="qualifyBar" class="bar"></div></div>
-      <div class="info">この中から<strong>好きな写真を何枚でも</strong>選んでください。</div>
+      <div class="info">この中から<strong>好きな写真を選んでください。</strong>選ばなくても進めます。</div>
       <div id="qualifyGrid" class="grid"></div>
       <div class="actions">
         <button id="qualifyNext" class="primary">選択を決定</button>
@@ -195,7 +235,7 @@
         <div class="top1">🏆 あなたの好き顔ランキング</div>
         <p class="info">あなたが選んだ結果です</p>
       </div>
-      <div id="ranking"></div>
+      <div id="ranking" class="resultGrid"></div>
       <div class="actions">
         <button id="retry" class="primary">もう一度やる</button>
       </div>
@@ -208,12 +248,14 @@
       "IMG_2718.jpeg",
       "IMG_2719.jpeg",
       "IMG_2720.jpeg",
+      "IMG_2721.jpeg",
       "IMG_2722.jpeg",
       "IMG_2723.jpeg",
       "IMG_2724.jpeg",
       "IMG_2725.jpeg",
       "IMG_2726.jpeg",
       "IMG_2727.jpeg",
+      "IMG_2728.jpeg",
       "IMG_2729.jpeg",
       "IMG_2730.jpeg",
       "IMG_2731.jpeg",
@@ -246,6 +288,7 @@
       "IMG_2758.jpeg",
       "IMG_2759.jpeg",
       "IMG_2760.jpeg",
+      "IMG_2761.jpeg",
       "IMG_2762.jpeg",
       "IMG_2763.jpeg",
       "IMG_2764.jpeg",
@@ -304,19 +347,19 @@
         if (remaining <= 6) {
           size = remaining;
 
-          if (size < 3 && state.qualifyGroups.length) {
+          if (size < 5 && state.qualifyGroups.length) {
             const last = state.qualifyGroups[state.qualifyGroups.length - 1];
-            if (last.length > 3) {
-              size = 3;
+            if (last.length > 5) {
               const moved = last.pop();
-              state.qualifyGroups.push(shuffled.slice(i, i + 1));
-              state.qualifyGroups[state.qualifyGroups.length - 1].push(moved);
+              const nextGroup = shuffled.slice(i, i + 1);
+              nextGroup.push(moved);
+              state.qualifyGroups.push(nextGroup);
               i += 1;
               continue;
             }
           }
         } else {
-          size = Math.floor(Math.random() * 4) + 3;
+          size = Math.random() < 0.5 ? 5 : 6;
         }
 
         state.qualifyGroups.push(shuffled.slice(i, i + size));
@@ -364,11 +407,6 @@
     });
 
     $("qualifyNext").addEventListener("click", () => {
-      if (state.selected.length === 0) {
-        alert("最低1枚は選んでください。");
-        return;
-      }
-
       state.selected.forEach((id) => {
         const photo = state.photos.find((p) => p.id === id);
         if (photo && !state.finalists.includes(photo)) {
@@ -388,29 +426,29 @@
     function startLeague() {
       $("qualify").classList.add("hidden");
 
+      if (state.finalists.length === 0) {
+        state.finalists = [...state.photos].slice(0, Math.min(9, state.photos.length));
+      }
+
       if (state.finalists.length === 1) {
         showFinalResult(state.finalists);
         return;
       }
 
-      if (state.finalists.length === 2) {
-        state.leagueMatches = [state.finalists];
-      } else {
-        state.leagueMatches = [];
-        const shuffled = shuffle(state.finalists);
+      state.leagueMatches = [];
+      const shuffled = shuffle(state.finalists);
 
-        for (let i = 0; i < shuffled.length; i += 3) {
-          const group = shuffled.slice(i, i + 3);
+      for (let i = 0; i < shuffled.length; i += 3) {
+        const group = shuffled.slice(i, i + 3);
 
-          if (group.length === 2) {
-            const previous = state.leagueMatches[state.leagueMatches.length - 1];
-            if (previous && previous.length === 3) {
-              group.push(previous.pop());
-            }
+        if (group.length === 2) {
+          const previous = state.leagueMatches[state.leagueMatches.length - 1];
+          if (previous && previous.length === 3) {
+            group.push(previous.pop());
           }
-
-          state.leagueMatches.push(group);
         }
+
+        state.leagueMatches.push(group);
       }
 
       state.leagueIndex = 0;
@@ -450,21 +488,29 @@
       $("league").classList.add("hidden");
 
       const sorted = [...state.finalists].sort((a, b) => (state.wins[b.id] || 0) - (state.wins[a.id] || 0));
-      showFinalResult(sorted.slice(0, 9));
+      showFinalResult(sorted.slice(0, Math.min(9, sorted.length)));
     }
 
     function showFinalResult(result) {
       $("result").classList.remove("hidden");
-      $("ranking").innerHTML = result.map((p, i) => `
-        <div class="resultCard">
-          <div class="rank">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</div>
-          <img src="${p.url}">
-          <div class="resultInfo">
-            <b>${i + 1}位</b>
-            ${i === 0 ? '<div class="small">一番好き♡</div>' : ""}
+      $("ranking").innerHTML = result.map((p, i) => {
+        const rankText = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1;
+        const score = state.wins?.[p.id] ?? 0;
+
+        return `
+          <div class="resultCard">
+            <div class="rankBadge">${rankText}</div>
+            <img src="${p.url}">
+            <div class="resultInfo">
+              <div>
+                <strong>${i + 1}位</strong>
+                <div class="small">${i === 0 ? "一番好き♡" : "投票結果"}</div>
+              </div>
+              <div class="resultScore">${score}勝</div>
+            </div>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     $("retry").addEventListener("click", () => {
