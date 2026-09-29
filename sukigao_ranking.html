@@ -1,1018 +1,479 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>好き顔ランキング</title>
-
-<style>
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
-  background:#f7f7f9;
-  color:#222;
-}
-
-header{
-  background:#fff;
-  padding:22px 16px 14px;
-  text-align:center;
-  border-bottom:1px solid #eee;
-}
-
-h1{
-  margin:0 0 6px;
-  font-size:25px;
-}
-
-.sub{
-  color:#777;
-  font-size:13px;
-}
-
-main{
-  max-width:760px;
-  margin:auto;
-  padding:16px;
-}
-
-.panel{
-  background:#fff;
-  border-radius:18px;
-  padding:18px;
-  margin-bottom:16px;
-  box-shadow:0 4px 18px #0000000b;
-}
-
-.hidden{
-  display:none!important;
-}
-
-button{
-  border:0;
-  border-radius:13px;
-  padding:13px 17px;
-  font-size:15px;
-  font-weight:700;
-}
-
-.primary{
-  background:#222;
-  color:#fff;
-}
-
-.light{
-  background:#eee;
-  color:#222;
-}
-
-.center{
-  text-align:center;
-}
-
-.info{
-  color:#777;
-  font-size:13px;
-  line-height:1.7;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-  margin-top:16px;
-}
-
-.photo{
-  position:relative;
-  border:3px solid transparent;
-  border-radius:16px;
-  overflow:hidden;
-  background:#eee;
-  padding:0;
-  box-shadow:0 3px 12px #0001;
-}
-
-.photo.selected{
-  border-color:#222;
-  transform:scale(.98);
-}
-
-.photo img{
-  width:100%;
-  aspect-ratio:3/4;
-  object-fit:cover;
-  display:block;
-}
-
-.photo .mark{
-  position:absolute;
-  right:8px;
-  top:8px;
-  width:30px;
-  height:30px;
-  border-radius:50%;
-  background:#fff;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:18px;
-}
-
-.photo.selected .mark{
-  display:flex;
-}
-
-.progress{
-  height:7px;
-  background:#eee;
-  border-radius:99px;
-  overflow:hidden;
-  margin:12px 0 16px;
-}
-
-.bar{
-  height:100%;
-  background:#222;
-  width:0;
-  transition:.2s;
-}
-
-.league{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-}
-
-.league button{
-  padding:0;
-  background:white;
-  overflow:hidden;
-  box-shadow:0 3px 14px #0002;
-}
-
-.league img{
-  width:100%;
-  aspect-ratio:3/4;
-  object-fit:cover;
-  display:block;
-}
-
-.league .label{
-  padding:11px;
-}
-
-.resultCard{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:10px 0;
-  border-bottom:1px solid #eee;
-}
-
-.resultCard img{
-  width:62px;
-  height:78px;
-  object-fit:cover;
-  border-radius:10px;
-}
-
-.rank{
-  width:35px;
-  font-weight:900;
-  text-align:center;
-  font-size:18px;
-}
-
-.resultInfo{
-  flex:1;
-}
-
-.top1{
-  font-size:20px;
-  font-weight:900;
-}
-
-.actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:16px;
-}
-
-@media(max-width:500px){
-  main{
-    padding:11px;
-  }
-
-  .panel{
-    padding:14px;
-  }
-
-  .grid{
-    gap:7px;
-  }
-
-  .league{
-    gap:7px;
-  }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>好き顔ランキング</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background: #f7f7f9;
+      color: #222;
+    }
+    header {
+      background: #fff;
+      padding: 22px 16px 14px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    h1 { margin: 0 0 6px; font-size: 25px; }
+    .sub { color: #777; font-size: 13px; }
+    main {
+      max-width: 760px;
+      margin: auto;
+      padding: 16px;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+    }
+    .hidden { display: none !important; }
+    button {
+      border: 0;
+      border-radius: 13px;
+      padding: 13px 17px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary {
+      background: #222;
+      color: #fff;
+    }
+    .info {
+      color: #777;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .photo {
+      position: relative;
+      border: 3px solid transparent;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #eee;
+      padding: 0;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+    .photo.selected {
+      border-color: #222;
+      transform: scale(0.98);
+    }
+    .photo img {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      display: block;
+    }
+    .photo .mark {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .photo.selected .mark { display: flex; }
+    .progress {
+      height: 7px;
+      background: #eee;
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 12px 0 16px;
+    }
+    .bar {
+      height: 100%;
+      background: #222;
+      width: 0;
+      transition: 0.2s;
+    }
+    .league {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .league button {
+      padding: 0;
+      background: white;
+      overflow: hidden;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+    }
+    .league img {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      display: block;
+    }
+    .league .label {
+      padding: 11px;
+    }
+    .resultCard {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .resultCard img {
+      width: 62px;
+      height: 78px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .rank {
+      width: 35px;
+      font-weight: 900;
+      text-align: center;
+      font-size: 18px;
+    }
+    .resultInfo { flex: 1; }
+    .top1 { font-size: 20px; font-weight: 900; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    @media (max-width: 500px) {
+      main { padding: 11px; }
+      .panel { padding: 14px; }
+      .grid { gap: 7px; }
+      .league { gap: 7px; }
+    }
+  </style>
 </head>
-
 <body>
-
-<header>
-  <h1>♡ 好き顔ランキング</h1>
-  <div class="sub">あなたが一番好きな顔を決めよう</div>
-</header>
-
-<main>
-
-<!-- START -->
-
-<section id="home" class="panel center">
-
-  <h2>好き顔ランキング</h2>
-
-  <p class="info">
-    写真の中から好きな顔を選んでください。<br>
-    最後にあなた専用のTOP9が決まります。
-  </p>
-
-  <button
-    class="primary"
-    id="startButton">
-    ランキング開始
-  </button>
-
-</section>
-
-
-<!-- QUALIFY -->
-
-<section id="qualify" class="panel hidden">
-
-  <div>
-    <b id="qualifyTitle">予選</b>
-  </div>
-
-  <div class="progress">
-    <div id="qualifyBar" class="bar"></div>
-  </div>
-
-  <div class="info">
-    この中から<strong>好きな写真を何枚でも</strong>選んでください。
-  </div>
-
-  <div
-    id="qualifyGrid"
-    class="grid">
-  </div>
-
-  <div class="actions">
-
-    <button
-      id="qualifyNext"
-      class="primary">
-      選択を決定
-    </button>
-
-  </div>
-
-</section>
-
-
-<!-- LEAGUE -->
-
-<section id="league" class="panel hidden">
-
-  <div>
-    <b>予選通過リーグ</b>
-  </div>
-
-  <p class="info">
-    3枚の中から、<strong>一番好きな1枚</strong>を選んでください。
-  </p>
-
-  <div class="progress">
-    <div id="leagueBar" class="bar"></div>
-  </div>
-
-  <div
-    id="leagueGrid"
-    class="league">
-  </div>
-
-</section>
-
-
-<!-- RESULT -->
-
-<section id="result" class="panel hidden">
-
-  <div class="center">
-
-    <div class="top1">
-      🏆 あなたの好き顔ランキング
-    </div>
-
-    <p class="info">
-      あなたが選んだ結果です
-    </p>
-
-  </div>
-
-  <div id="ranking"></div>
-
-  <div class="actions">
-
-    <button
-      id="retry"
-      class="primary">
-      もう一度やる
-    </button>
-
-  </div>
-
-</section>
-
-</main>
-
-
-<script>
-
-/*
-==================================================
-写真設定
-==================================================
-
-GitHubの photos フォルダに
-
-01.jpg
-02.jpg
-03.jpg
-
-のように写真を入れてください。
-
-ここにファイル名を追加します。
-
-例：
-
-"photos/01.jpg"
-
-==================================================
-*/
-
-const PHOTO_FILES = [
-
-  const PHOTO_FILES = [
-  "IMG_2717.jpeg",
-  "IMG_2718.jpeg",
-  "IMG_2719.jpeg",
-  "IMG_2720.jpeg",
-  "IMG_2721.jpeg",
-  "IMG_2722.jpeg",
-  "IMG_2723.jpeg",
-  "IMG_2724.jpeg",
-  "IMG_2725.jpeg",
-  "IMG_2726.jpeg",
-  "IMG_2727.jpeg",
-  "IMG_2728.jpeg",
-  "IMG_2729.jpeg",
-  "IMG_2730.jpeg",
-  "IMG_2731.jpeg",
-  "IMG_2732.jpeg",
-  "IMG_2733.jpeg",
-  "IMG_2734.jpeg",
-  "IMG_2735.jpeg",
-  "IMG_2736.jpeg",
-  "IMG_2737.jpeg",
-  "IMG_2738.jpeg",
-  "IMG_2739.jpeg",
-  "IMG_2740.jpeg",
-  "IMG_2741.jpeg",
-  "IMG_2742.jpeg",
-  "IMG_2743.jpeg",
-  "IMG_2744.jpeg",
-  "IMG_2745.jpeg",
-  "IMG_2746.jpeg",
-  "IMG_2747.jpeg",
-  "IMG_2748.jpeg",
-  "IMG_2749.jpeg",
-  "IMG_2750.jpeg",
-  "IMG_2751.jpeg",
-  "IMG_2752.jpeg",
-  "IMG_2753.jpeg",
-  "IMG_2754.jpeg",
-  "IMG_2755.jpeg",
-  "IMG_2756.jpeg",
-  "IMG_2757.jpeg",
-  "IMG_2758.jpeg",
-  "IMG_2759.jpeg",
-  "IMG_2760.jpeg",
-  "IMG_2761.jpeg",
-  "IMG_2762.jpeg",
-  "IMG_2763.jpeg",
-  "IMG_2764.jpeg",
-  "IMG_2765.jpeg",
-  "IMG_2766.jpeg",
-  "IMG_2767.jpeg",
-  "IMG_2768.jpeg",
-  "IMG_2769.jpeg",
-  "IMG_2770.jpeg"
-];
-
-
-/*
-写真データ
-*/
-
-let photos=[];
-
-let qualifyGroups=[];
-
-let qualifyIndex=0;
-
-let selected=[];
-
-let finalists=[];
-
-let leagueMatches=[];
-
-let leagueIndex=0;
-
-let wins={};
-
-
-/*
-画面取得
-*/
-
-const $=id=>document.getElementById(id);
-
-
-/*
-写真読み込み
-*/
-
-function loadPhotos(){
-
-  photos=PHOTO_FILES.map(
-    (file,index)=>({
-
-      id:index,
-
-      file:file,
-
-      url:file,
-
-      wins:0
-
-    })
-  );
-
-}
-
-
-/*
-開始
-*/
-
-$("startButton").onclick=()=>{
-
-  if(photos.length<3){
-
-    alert("写真を3枚以上登録してください。");
-
-    return;
-
-  }
-
-  startQualify();
-
-};
-
-
-/*
-=========================================
-予選
-=========================================
-*/
-
-function startQualify(){
-
-  qualifyGroups=[];
-
-  qualifyIndex=0;
-
-  finalists=[];
-
-  selected=[];
-
-  /*
-  写真をシャッフル
-  */
-
-  const shuffled=[
-    ...photos
-  ].sort(
-    ()=>Math.random()-.5
-  );
-
-
-  /*
-  3〜6枚のグループを作る
-  */
-
-  let i=0;
-
-  while(i<shuffled.length){
-
-    const remaining=
-      shuffled.length-i;
-
-    let size;
-
-    if(remaining<=6){
-
-      size=remaining;
-
-      if(size<3 && qualifyGroups.length){
-
-        /*
-        最後が2枚になった場合は
-        前のグループから1枚移動
-        */
-
-        const last=
-          qualifyGroups[
-            qualifyGroups.length-1
-          ];
-
-        if(last.length>3){
-
-          size=3;
-
-          const moved=
-            last.pop();
-
-          qualifyGroups.push(
-            shuffled.slice(i,i+1)
-          );
-
-          qualifyGroups[
-            qualifyGroups.length-1
-          ].push(moved);
-
-          i++;
-
-          continue;
-        }
+  <header>
+    <h1>♡ 好き顔ランキング</h1>
+    <div class="sub">あなた��一番好きな顔を決めよう</div>
+  </header>
+
+  <main>
+    <section id="home" class="panel center">
+      <h2>好き顔ランキング</h2>
+      <p class="info">
+        写真の中から好きな顔を選んでください。<br>
+        最後にあなた専用のTOP9が決まります。
+      </p>
+      <button class="primary" id="startButton">ランキング開始</button>
+    </section>
+
+    <section id="qualify" class="panel hidden">
+      <div><b id="qualifyTitle">予選</b></div>
+      <div class="progress"><div id="qualifyBar" class="bar"></div></div>
+      <div class="info">この中から<strong>好きな写真を何枚でも</strong>選んでください。</div>
+      <div id="qualifyGrid" class="grid"></div>
+      <div class="actions">
+        <button id="qualifyNext" class="primary">選択を決定</button>
+      </div>
+    </section>
+
+    <section id="league" class="panel hidden">
+      <div><b>予選通過リーグ</b></div>
+      <p class="info">3枚の中から、<strong>一番好きな1枚</strong>を選んでください。</p>
+      <div class="progress"><div id="leagueBar" class="bar"></div></div>
+      <div id="leagueGrid" class="league"></div>
+    </section>
+
+    <section id="result" class="panel hidden">
+      <div class="center">
+        <div class="top1">🏆 あなたの好き顔ランキング</div>
+        <p class="info">あなたが選んだ結果です</p>
+      </div>
+      <div id="ranking"></div>
+      <div class="actions">
+        <button id="retry" class="primary">もう一度やる</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const PHOTO_FILES = [
+      "IMG_2717.jpeg",
+      "IMG_2718.jpeg",
+      "IMG_2719.jpeg",
+      "IMG_2720.jpeg",
+      "IMG_2722.jpeg",
+      "IMG_2723.jpeg",
+      "IMG_2724.jpeg",
+      "IMG_2725.jpeg",
+      "IMG_2726.jpeg",
+      "IMG_2727.jpeg",
+      "IMG_2729.jpeg",
+      "IMG_2730.jpeg",
+      "IMG_2731.jpeg",
+      "IMG_2732.jpeg",
+      "IMG_2733.jpeg",
+      "IMG_2734.jpeg",
+      "IMG_2735.jpeg",
+      "IMG_2736.jpeg",
+      "IMG_2737.jpeg",
+      "IMG_2738.jpeg",
+      "IMG_2739.jpeg",
+      "IMG_2740.jpeg",
+      "IMG_2741.jpeg",
+      "IMG_2742.jpeg",
+      "IMG_2743.jpeg",
+      "IMG_2744.jpeg",
+      "IMG_2745.jpeg",
+      "IMG_2746.jpeg",
+      "IMG_2747.jpeg",
+      "IMG_2748.jpeg",
+      "IMG_2749.jpeg",
+      "IMG_2750.jpeg",
+      "IMG_2751.jpeg",
+      "IMG_2752.jpeg",
+      "IMG_2753.jpeg",
+      "IMG_2754.jpeg",
+      "IMG_2755.jpeg",
+      "IMG_2756.jpeg",
+      "IMG_2757.jpeg",
+      "IMG_2758.jpeg",
+      "IMG_2759.jpeg",
+      "IMG_2760.jpeg",
+      "IMG_2762.jpeg",
+      "IMG_2763.jpeg",
+      "IMG_2764.jpeg",
+      "IMG_2765.jpeg",
+      "IMG_2766.jpeg",
+      "IMG_2767.jpeg",
+      "IMG_2768.jpeg",
+      "IMG_2769.jpeg",
+      "IMG_2770.jpeg"
+    ];
+
+    const state = {
+      photos: [],
+      qualifyGroups: [],
+      qualifyIndex: 0,
+      selected: [],
+      finalists: [],
+      leagueMatches: [],
+      leagueIndex: 0,
+      wins: {}
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function loadPhotos() {
+      state.photos = PHOTO_FILES.map((file, index) => ({
+        id: index,
+        file,
+        url: file,
+        wins: 0
+      }));
+    }
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
       }
-
-    }else{
-
-      size=
-        Math.floor(
-          Math.random()*4
-        )+3;
-
+      return copy;
     }
 
-    qualifyGroups.push(
-      shuffled.slice(i,i+size)
-    );
-
-    i+=size;
-
-  }
-
-
-  $("home").classList.add("hidden");
-
-  $("qualify").classList.remove("hidden");
-
-  showQualify();
-
-}
-
-
-/*
-予選表示
-*/
-
-function showQualify(){
-
-  selected=[];
-
-  const group=
-    qualifyGroups[
-      qualifyIndex
-    ];
-
-  $("qualifyTitle").textContent=
-    `予選 ${qualifyIndex+1} / ${qualifyGroups.length}`;
-
-  $("qualifyBar").style.width=
-    `${qualifyIndex/qualifyGroups.length*100}%`;
-
-
-  $("qualifyGrid").innerHTML=
-    group.map(
-      p=>`
-
-      <button
-        class="photo"
-        data-id="${p.id}"
-        onclick="toggleSelect(${p.id})">
-
-        <img src="${p.url}">
-
-        <span class="mark">
-          ✓
-        </span>
-
-      </button>
-
-      `
-    ).join("");
-
-}
-
-
-/*
-予選選択
-*/
-
-window.toggleSelect=id=>{
-
-  const button=
-    document.querySelector(
-      `.photo[data-id="${id}"]`
-    );
-
-  if(selected.includes(id)){
-
-    selected=
-      selected.filter(
-        x=>x!==id
-      );
-
-    button.classList.remove(
-      "selected"
-    );
-
-  }else{
-
-    selected.push(id);
-
-    button.classList.add(
-      "selected"
-    );
-
-  }
-
-};
-
-
-/*
-予選決定
-*/
-
-$("qualifyNext").onclick=()=>{
-
-  if(selected.length===0){
-
-    alert(
-      "最低1枚は選んでください。"
-    );
-
-    return;
-
-  }
-
-
-  selected.forEach(id=>{
-
-    const p=
-      photos.find(
-        x=>x.id===id
-      );
-
-    if(p && !finalists.includes(p)){
-
-      finalists.push(p);
-
-    }
-
-  });
-
-
-  qualifyIndex++;
-
-
-  if(
-    qualifyIndex<
-    qualifyGroups.length
-  ){
-
-    showQualify();
-
-  }else{
-
-    startLeague();
-
-  }
-
-};
-
-
-/*
-=========================================
-リーグ
-=========================================
-*/
-
-function startLeague(){
-
-  $("qualify").classList.add("hidden");
-
-  /*
-  選ばれた写真が少なすぎる場合
-  */
-
-  if(finalists.length===1){
-
-    showFinalResult(
-      finalists
-    );
-
-    return;
-
-  }
-
-
-  /*
-  2枚しかない場合
-  */
-
-  if(finalists.length===2){
-
-    leagueMatches=[
-      finalists
-    ];
-
-  }else{
-
-    /*
-    3枚ずつグループを作る
-    */
-
-    leagueMatches=[];
-
-    const shuffled=[
-      ...finalists
-    ].sort(
-      ()=>Math.random()-.5
-    );
-
-    for(
-      let i=0;
-      i<shuffled.length;
-      i+=3
-    ){
-
-      const group=
-        shuffled.slice(
-          i,
-          i+3
-        );
-
-      /*
-      2枚になった場合は
-      最後のグループと混ぜる
-      */
-
-      if(group.length===2){
-
-        const previous=
-          leagueMatches[
-            leagueMatches.length-1
-          ];
-
-        if(previous && previous.length===3){
-
-          group.push(
-            previous.pop()
-          );
-
+    function startQualify() {
+      state.qualifyGroups = [];
+      state.qualifyIndex = 0;
+      state.finalists = [];
+      state.selected = [];
+
+      const shuffled = shuffle(state.photos);
+      let i = 0;
+
+      while (i < shuffled.length) {
+        const remaining = shuffled.length - i;
+        let size;
+
+        if (remaining <= 6) {
+          size = remaining;
+
+          if (size < 3 && state.qualifyGroups.length) {
+            const last = state.qualifyGroups[state.qualifyGroups.length - 1];
+            if (last.length > 3) {
+              size = 3;
+              const moved = last.pop();
+              state.qualifyGroups.push(shuffled.slice(i, i + 1));
+              state.qualifyGroups[state.qualifyGroups.length - 1].push(moved);
+              i += 1;
+              continue;
+            }
+          }
+        } else {
+          size = Math.floor(Math.random() * 4) + 3;
         }
 
+        state.qualifyGroups.push(shuffled.slice(i, i + size));
+        i += size;
       }
 
-      leagueMatches.push(group);
-
+      $("home").classList.add("hidden");
+      $("qualify").classList.remove("hidden");
+      showQualify();
     }
 
-  }
+    function showQualify() {
+      state.selected = [];
+      const group = state.qualifyGroups[state.qualifyIndex];
 
+      $("qualifyTitle").textContent = `予選 ${state.qualifyIndex + 1} / ${state.qualifyGroups.length}`;
+      $("qualifyBar").style.width = `${(state.qualifyIndex / state.qualifyGroups.length) * 100}%`;
 
-  leagueIndex=0;
+      $("qualifyGrid").innerHTML = group.map((p) => `
+        <button class="photo" data-id="${p.id}" onclick="toggleSelect(${p.id})">
+          <img src="${p.url}">
+          <span class="mark">✓</span>
+        </button>
+      `).join("");
+    }
 
-  wins={};
+    window.toggleSelect = (id) => {
+      const button = document.querySelector(`.photo[data-id="${id}"]`);
 
-  finalists.forEach(
-    p=>wins[p.id]=0
-  );
+      if (state.selected.includes(id)) {
+        state.selected = state.selected.filter((x) => x !== id);
+        button.classList.remove("selected");
+      } else {
+        state.selected.push(id);
+        button.classList.add("selected");
+      }
+    };
 
-  $("league").classList.remove(
-    "hidden"
-  );
+    $("startButton").addEventListener("click", () => {
+      if (state.photos.length < 3) {
+        alert("写真を3枚以上登録してください。");
+        return;
+      }
+      startQualify();
+    });
 
-  showLeague();
+    $("qualifyNext").addEventListener("click", () => {
+      if (state.selected.length === 0) {
+        alert("最低1枚は選んでください。");
+        return;
+      }
 
-}
+      state.selected.forEach((id) => {
+        const photo = state.photos.find((p) => p.id === id);
+        if (photo && !state.finalists.includes(photo)) {
+          state.finalists.push(photo);
+        }
+      });
 
+      state.qualifyIndex += 1;
 
-/*
-リーグ表示
-*/
+      if (state.qualifyIndex < state.qualifyGroups.length) {
+        showQualify();
+      } else {
+        startLeague();
+      }
+    });
 
-function showLeague(){
+    function startLeague() {
+      $("qualify").classList.add("hidden");
 
-  if(
-    leagueIndex>=
-    leagueMatches.length
-  ){
+      if (state.finalists.length === 1) {
+        showFinalResult(state.finalists);
+        return;
+      }
 
-    finishLeague();
+      if (state.finalists.length === 2) {
+        state.leagueMatches = [state.finalists];
+      } else {
+        state.leagueMatches = [];
+        const shuffled = shuffle(state.finalists);
 
-    return;
+        for (let i = 0; i < shuffled.length; i += 3) {
+          const group = shuffled.slice(i, i + 3);
 
-  }
-
-
-  const group=
-    leagueMatches[
-      leagueIndex
-    ];
-
-
-  $("leagueBar").style.width=
-    `${leagueIndex/leagueMatches.length*100}%`;
-
-
-  $("leagueGrid").innerHTML=
-    group.map(
-      p=>`
-
-      <button
-        onclick="chooseLeague(${p.id})">
-
-        <img src="${p.url}">
-
-        <div class="label">
-          選ぶ
-        </div>
-
-      </button>
-
-      `
-    ).join("");
-
-}
-
-
-/*
-リーグ選択
-*/
-
-window.chooseLeague=id=>{
-
-  wins[id]=(wins[id]||0)+1;
-
-  leagueIndex++;
-
-  showLeague();
-
-};
-
-
-/*
-=========================================
-結果
-=========================================
-*/
-
-function finishLeague(){
-
-  $("league").classList.add(
-    "hidden"
-  );
-
-
-  /*
-  勝利数で並べる
-  */
-
-  const sorted=[
-    ...finalists
-  ].sort(
-    (a,b)=>
-      (wins[b.id]||0)-
-      (wins[a.id]||0)
-  );
-
-
-  /*
-  TOP9
-  */
-
-  showFinalResult(
-    sorted.slice(0,9)
-  );
-
-}
-
-
-/*
-結果表示
-*/
-
-function showFinalResult(result){
-
-  $("result").classList.remove(
-    "hidden"
-  );
-
-
-  $("ranking").innerHTML=
-    result.map(
-      (p,i)=>`
-
-      <div class="resultCard">
-
-        <div class="rank">
-          ${i===0?"🥇":
-            i===1?"🥈":
-            i===2?"🥉":
-            i+1}
-        </div>
-
-        <img src="${p.url}">
-
-        <div class="resultInfo">
-
-          <b>
-            ${i+1}位
-          </b>
-
-          ${
-            i===0
-            ? `<div class="small">一番好き♡</div>`
-            : ""
+          if (group.length === 2) {
+            const previous = state.leagueMatches[state.leagueMatches.length - 1];
+            if (previous && previous.length === 3) {
+              group.push(previous.pop());
+            }
           }
 
+          state.leagueMatches.push(group);
+        }
+      }
+
+      state.leagueIndex = 0;
+      state.wins = {};
+      state.finalists.forEach((p) => {
+        state.wins[p.id] = 0;
+      });
+
+      $("league").classList.remove("hidden");
+      showLeague();
+    }
+
+    function showLeague() {
+      if (state.leagueIndex >= state.leagueMatches.length) {
+        finishLeague();
+        return;
+      }
+
+      const group = state.leagueMatches[state.leagueIndex];
+      $("leagueBar").style.width = `${(state.leagueIndex / state.leagueMatches.length) * 100}%`;
+
+      $("leagueGrid").innerHTML = group.map((p) => `
+        <button onclick="chooseLeague(${p.id})">
+          <img src="${p.url}">
+          <div class="label">選ぶ</div>
+        </button>
+      `).join("");
+    }
+
+    window.chooseLeague = (id) => {
+      state.wins[id] = (state.wins[id] || 0) + 1;
+      state.leagueIndex += 1;
+      showLeague();
+    };
+
+    function finishLeague() {
+      $("league").classList.add("hidden");
+
+      const sorted = [...state.finalists].sort((a, b) => (state.wins[b.id] || 0) - (state.wins[a.id] || 0));
+      showFinalResult(sorted.slice(0, 9));
+    }
+
+    function showFinalResult(result) {
+      $("result").classList.remove("hidden");
+      $("ranking").innerHTML = result.map((p, i) => `
+        <div class="resultCard">
+          <div class="rank">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</div>
+          <img src="${p.url}">
+          <div class="resultInfo">
+            <b>${i + 1}位</b>
+            ${i === 0 ? '<div class="small">一番好き♡</div>' : ""}
+          </div>
         </div>
+      `).join("");
+    }
 
-      </div>
+    $("retry").addEventListener("click", () => {
+      $("result").classList.add("hidden");
+      $("home").classList.remove("hidden");
+      loadPhotos();
+    });
 
-      `
-    ).join("");
-
-}
-
-
-/*
-=========================================
-もう一度
-=========================================
-*/
-
-$("retry").onclick=()=>{
-
-  $("result").classList.add(
-    "hidden"
-  );
-
-  $("home").classList.remove(
-    "hidden"
-  );
-
-};
-
-
-/*
-開始時に写真を読み込む
-*/
-
-loadPhotos();
-
-</script>
-
+    loadPhotos();
+  </script>
 </body>
 </html>
-  
