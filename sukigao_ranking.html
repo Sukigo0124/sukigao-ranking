@@ -291,17 +291,11 @@
 
     <div class="actions">
 
-      <button
-        id="qualifyBack"
-        class="secondary"
-      >
+      <button id="qualifyBack" class="secondary">
         ← 1つ前
       </button>
 
-      <button
-        id="qualifyNext"
-        class="primary"
-      >
+      <button id="qualifyNext" class="primary">
         選択を決定
       </button>
 
@@ -322,8 +316,7 @@
     </p>
 
     <p class="info">
-      予選を通過した写真は何度も登場します。<br>
-      できるだけ他の通過写真とも比較されます。
+      選択結果によって、次に出てくる3枚が変化します。
     </p>
 
     <div class="progress">
@@ -334,10 +327,7 @@
 
     <div class="actions">
 
-      <button
-        id="leagueBack"
-        class="secondary"
-      >
+      <button id="leagueBack" class="secondary">
         ← 1つ前
       </button>
 
@@ -356,7 +346,7 @@
       </div>
 
       <p class="info">
-        あなたが選んだ結果です
+        リーグでの選択結果から決定しました
       </p>
 
     </div>
@@ -365,17 +355,11 @@
 
     <div class="actions">
 
-      <button
-        id="resultBack"
-        class="secondary"
-      >
+      <button id="resultBack" class="secondary">
         ← リーグに戻る
       </button>
 
-      <button
-        id="retry"
-        class="primary"
-      >
+      <button id="retry" class="primary">
         もう一度やる
       </button>
 
@@ -457,49 +441,43 @@
 
     photos: [],
 
+    /* 予選 */
     qualifyGroups: [],
-
     qualifyIndex: 0,
-
     qualifySelections: [],
 
+    /* 予選通過 */
     finalists: [],
 
-    leagueMatches: [],
-
+    /* リーグ */
     leagueIndex: 0,
-
     leagueHistory: [],
 
+    /*
+     * 各写真の勝利数
+     */
     wins: {},
 
+    /*
+     * 各写真の登場回数
+     */
+    appearances: {},
+
+    /*
+     * 写真同士が同じ組になった回数
+     */
+    pairCounts: {},
+
+    /*
+     * 結果
+     */
     result: []
 
   };
 
 
-  const $ = (id) =>
+  const $ = id =>
     document.getElementById(id);
-
-
-  /* =========================
-     写真読み込み
-  ========================= */
-
-  function loadPhotos() {
-
-    state.photos =
-      PHOTO_FILES.map((file, index) => ({
-
-        id: index,
-
-        file: file,
-
-        url: file
-
-      }));
-
-  }
 
 
   /* =========================
@@ -532,7 +510,26 @@
 
 
   /* =========================
+     写真読み込み
+  ========================= */
+
+  function loadPhotos() {
+
+    state.photos =
+      PHOTO_FILES.map((file, index) => ({
+
+        id: index,
+        file: file,
+        url: file
+
+      }));
+
+  }
+
+
+  /* =========================
      予選グループ作成
+     
      必ず5～6枚
   ========================= */
 
@@ -543,56 +540,27 @@
 
     const groups = [];
 
-    let remaining =
-      shuffled.length;
-
     let index = 0;
 
-    while (remaining > 0) {
+    while (
+      index < shuffled.length
+    ) {
+
+      const remaining =
+        shuffled.length - index;
 
       let size;
 
       /*
-       * 残りが5～6ならそのまま
+       * 最後は5～6枚になるよう調整
        */
       if (remaining <= 6) {
 
         size = remaining;
 
-        /*
-         * 4枚になってしまう場合は
-         * 前のグループから1枚移して
-         * 5枚＋5枚などにする
-         */
-        if (size < 5) {
+      } else if (remaining === 7) {
 
-          const last =
-            groups[groups.length - 1];
-
-          if (last && last.length > 5) {
-
-            const moved =
-              last.pop();
-
-            const group =
-              shuffled.slice(
-                index,
-                index + size
-              );
-
-            group.push(moved);
-
-            groups.push(group);
-
-            index += size;
-
-            remaining = 0;
-
-            continue;
-
-          }
-
-        }
+        size = 5;
 
       } else {
 
@@ -600,6 +568,18 @@
           Math.random() < 0.5
             ? 5
             : 6;
+
+        /*
+         * 残りが4枚にならないよう調整
+         */
+        if (
+          remaining - size > 0 &&
+          remaining - size < 5
+        ) {
+
+          size = 5;
+
+        }
 
       }
 
@@ -611,8 +591,6 @@
       );
 
       index += size;
-
-      remaining -= size;
 
     }
 
@@ -632,12 +610,19 @@
 
     state.qualifyIndex = 0;
 
-    state.qualifySelections =
-      [];
+    state.qualifySelections = [];
 
     state.finalists = [];
 
     $("home")
+      .classList
+      .add("hidden");
+
+    $("result")
+      .classList
+      .add("hidden");
+
+    $("league")
       .classList
       .add("hidden");
 
@@ -663,19 +648,24 @@
 
     if (!group) {
 
+      collectFinalists();
+
       startLeague();
 
       return;
 
     }
 
+
     $("qualifyTitle")
       .textContent =
       `予選 ${state.qualifyIndex + 1} / ${state.qualifyGroups.length}`;
 
+
     $("qualifyBar")
       .style.width =
-      `${(state.qualifyIndex / state.qualifyGroups.length) * 100}%`;
+      `${((state.qualifyIndex) /
+          state.qualifyGroups.length) * 100}%`;
 
 
     const saved =
@@ -690,7 +680,6 @@
 
         <button
           class="photo ${saved.includes(p.id) ? "selected" : ""}"
-          data-id="${p.id}"
           onclick="toggleSelect(${p.id})"
         >
 
@@ -711,45 +700,49 @@
      予選選択
   ========================= */
 
-  window.toggleSelect = function(id) {
+  window.toggleSelect =
+    function(id) {
 
-    if (
-      !state.qualifySelections[
-        state.qualifyIndex
-      ]
-    ) {
+      if (
+        !state.qualifySelections[
+          state.qualifyIndex
+        ]
+      ) {
 
-      state.qualifySelections[
-        state.qualifyIndex
-      ] = [];
+        state.qualifySelections[
+          state.qualifyIndex
+        ] = [];
 
-    }
-
-    const selected =
-      state.qualifySelections[
-        state.qualifyIndex
-      ];
+      }
 
 
-    if (selected.includes(id)) {
-
-      state.qualifySelections[
-        state.qualifyIndex
-      ] =
-        selected.filter(
-          x => x !== id
-        );
-
-    } else {
-
-      selected.push(id);
-
-    }
+      const selected =
+        state.qualifySelections[
+          state.qualifyIndex
+        ];
 
 
-    showQualify();
+      if (
+        selected.includes(id)
+      ) {
 
-  };
+        state.qualifySelections[
+          state.qualifyIndex
+        ] =
+          selected.filter(
+            x => x !== id
+          );
+
+      } else {
+
+        selected.push(id);
+
+      }
+
+
+      showQualify();
+
+    };
 
 
   /* =========================
@@ -816,7 +809,7 @@
 
 
   /* =========================
-     予選通過者を確定
+     予選通過者確定
   ========================= */
 
   function collectFinalists() {
@@ -828,7 +821,9 @@
 
         group.forEach(id => {
 
-          if (!ids.includes(id)) {
+          if (
+            !ids.includes(id)
+          ) {
 
             ids.push(id);
 
@@ -850,189 +845,280 @@
 
 
   /* =========================
-     リーグ対戦を作る
-     
-     なるべく全員と比較する
-     1人あたり複数回登場
+     ペアキー
   ========================= */
 
-  function createLeagueMatches() {
+  function pairKey(a, b) {
+
+    return [
+      Math.min(a.id, b.id),
+      Math.max(a.id, b.id)
+    ].join("-");
+
+  }
+
+
+  /* =========================
+     3人組のキー
+  ========================= */
+
+  function trioKey(group) {
+
+    return group
+      .map(p => p.id)
+      .sort((a, b) => a - b)
+      .join("-");
+
+  }
+
+
+  /* =========================
+     次の3枚を決める
+     
+     選択結果によって
+     次の試行が変化する
+  ========================= */
+
+  function createNextLeagueGroup() {
 
     const players =
-      shuffle([
-        ...state.finalists
-      ]);
+      [...state.finalists];
 
 
-    const n =
-      players.length;
+    if (players.length < 3) {
+      return players;
+    }
 
 
-    if (n < 3) {
+    /*
+     * まだ出場回数が少ない写真を
+     * 優先するためのスコア
+     */
+    function priority(p) {
 
-      return [];
+      const appearances =
+        state.appearances[p.id] || 0;
+
+      const wins =
+        state.wins[p.id] || 0;
+
+      /*
+       * 出場が少ないほど高得点。
+       * 勝利数が近い相手と比較しやすくする。
+       */
+      return (
+        100 / (appearances + 1)
+        +
+        10 / (Math.abs(wins) + 1)
+        +
+        Math.random() * 8
+      );
 
     }
 
 
-    const matches = [];
-
-    const used = new Set();
-
-
     /*
-     * まず全員が他の人と
-     * できるだけ対戦できるように
-     * 3人組を作る
+     * まず候補を作る
      */
-
-    const targetAppearances =
-      Math.max(
-        4,
-        Math.min(6, n - 1)
+    const candidates =
+      [...players].sort(
+        (a, b) =>
+          priority(b) - priority(a)
       );
 
 
-    const appearances = {};
-
-    players.forEach(p => {
-      appearances[p.id] = 0;
-    });
+    /*
+     * 先頭から1人決定
+     */
+    const first =
+      candidates[0];
 
 
     /*
-     * 3人組を作っていく
+     * 2人目は、
+     * 1人目との比較回数が少なく、
+     * 勝利数も近い人を優先
      */
-
-    let safety = 0;
-
-    while (
-      Math.min(
-        ...players.map(
-          p => appearances[p.id]
+    const secondCandidates =
+      players
+        .filter(
+          p => p.id !== first.id
         )
-      ) < targetAppearances &&
-      safety < 1000
-    ) {
+        .sort((a, b) => {
 
-      safety++;
+          const pairA =
+            state.pairCounts[
+              pairKey(first, a)
+            ] || 0;
 
+          const pairB =
+            state.pairCounts[
+              pairKey(first, b)
+            ] || 0;
 
-      const candidates =
-        [...players].sort(
-          (a, b) =>
-            appearances[a.id] -
-            appearances[b.id]
-        );
-
-
-      let made = false;
-
-
-      /*
-       * 出現回数の少ない人を
-       * 優先して3人選ぶ
-       */
-
-      for (
-        let a = 0;
-        a < candidates.length;
-        a++
-      ) {
-
-        for (
-          let b = a + 1;
-          b < candidates.length;
-          b++
-        ) {
-
-          for (
-            let c = b + 1;
-            c < candidates.length;
-            c++
+          if (
+            pairA !== pairB
           ) {
 
-            const group = [
-              candidates[a],
-              candidates[b],
-              candidates[c]
-            ];
-
-
-            const ids =
-              group
-                .map(p => p.id)
-                .sort(
-                  (x, y) => x - y
-                );
-
-
-            const key =
-              ids.join("-");
-
-
-            /*
-             * 同じ3人組を
-             * なるべく繰り返さない
-             */
-
-            if (
-              !used.has(key)
-            ) {
-
-              used.add(key);
-
-              matches.push(
-                shuffle(group)
-              );
-
-              group.forEach(p => {
-
-                appearances[p.id]++;
-
-              });
-
-              made = true;
-
-              break;
-
-            }
+            return pairA - pairB;
 
           }
 
-          if (made) break;
+          const winA =
+            state.wins[a.id] || 0;
 
-        }
+          const winB =
+            state.wins[b.id] || 0;
 
-        if (made) break;
+          const firstWins =
+            state.wins[first.id] || 0;
 
-      }
-
-
-      /*
-       * 全組み合わせを使い切った場合
-       * 繰り返しも許可
-       */
-
-      if (!made) {
-
-        const group =
-          shuffle(players).slice(0, 3);
-
-        matches.push(group);
-
-        group.forEach(p => {
-
-          appearances[p.id]++;
+          return (
+            Math.abs(winA - firstWins)
+            -
+            Math.abs(winB - firstWins)
+          );
 
         });
+
+
+    const second =
+      secondCandidates[0];
+
+
+    /*
+     * 3人目は、
+     * 既存2人との比較回数が少ない人を優先
+     */
+    const thirdCandidates =
+      players
+        .filter(
+          p =>
+            p.id !== first.id &&
+            p.id !== second.id
+        )
+        .sort((a, b) => {
+
+          const scoreA =
+            (state.pairCounts[
+              pairKey(first, a)
+            ] || 0)
+            +
+            (state.pairCounts[
+              pairKey(second, a)
+            ] || 0);
+
+          const scoreB =
+            (state.pairCounts[
+              pairKey(first, b)
+            ] || 0)
+            +
+            (state.pairCounts[
+              pairKey(second, b)
+            ] || 0);
+
+          return scoreA - scoreB;
+
+        });
+
+
+    const third =
+      thirdCandidates[0];
+
+
+    let group =
+      [first, second, third];
+
+
+    /*
+     * できるだけ同じ3人組を避ける
+     */
+    const key =
+      trioKey(group);
+
+
+    const previousKeys =
+      state.leagueHistory.map(
+        h => h.trioKey
+      );
+
+
+    if (
+      previousKeys.includes(key)
+    ) {
+
+      const alternatives =
+        shuffle(
+          players.filter(
+            p =>
+              !group.some(
+                x => x.id === p.id
+              )
+          )
+        );
+
+
+      for (
+        const alt of alternatives
+      ) {
+
+        const test =
+          [
+            first,
+            second,
+            alt
+          ];
+
+
+        const testKey =
+          trioKey(test);
+
+
+        if (
+          !previousKeys.includes(
+            testKey
+          )
+        ) {
+
+          group = test;
+
+          break;
+
+        }
 
       }
 
     }
 
 
-    return shuffle(matches);
+    return shuffle(group);
+
+  }
+
+
+  /* =========================
+     リーグ初期化
+  ========================= */
+
+  function initializeLeague() {
+
+    state.leagueIndex = 0;
+
+    state.leagueHistory = [];
+
+    state.wins = {};
+
+    state.appearances = {};
+
+    state.pairCounts = {};
+
+    state.finalists.forEach(p => {
+
+      state.wins[p.id] = 0;
+
+      state.appearances[p.id] = 0;
+
+    });
 
   }
 
@@ -1049,12 +1135,13 @@
 
 
     /*
-     * 予選で誰も選ばなかった場合
+     * 誰も選ばれなかった
      */
-
     if (
       state.finalists.length === 0
     ) {
+
+      state.result = [];
 
       showFinalResult([]);
 
@@ -1064,11 +1151,9 @@
 
 
     /*
-     * 1～2枚だけなら
-     * 3枚対戦ができないため
-     * そのままランキング
+     * 1～2枚なら比較できないため
+     * そのまま表示
      */
-
     if (
       state.finalists.length < 3
     ) {
@@ -1085,22 +1170,7 @@
     }
 
 
-    state.leagueMatches =
-      createLeagueMatches();
-
-
-    state.leagueIndex = 0;
-
-    state.leagueHistory = [];
-
-    state.wins = {};
-
-
-    state.finalists.forEach(p => {
-
-      state.wins[p.id] = 0;
-
-    });
+    initializeLeague();
 
 
     $("league")
@@ -1119,9 +1189,30 @@
 
   function showLeague() {
 
+    /*
+     * 十分な試行をしたら終了
+     *
+     * 基本回数は
+     * 予選通過人数に応じて増える
+     */
+    const baseRounds =
+      Math.max(
+        15,
+        Math.min(
+          45,
+          state.finalists.length * 3
+        )
+      );
+
+
+    /*
+     * 最後の方は、
+     * 選択結果がある程度固まったら終了。
+     *
+     * ただし最低15回は行う。
+     */
     if (
-      state.leagueIndex >=
-      state.leagueMatches.length
+      state.leagueIndex >= baseRounds
     ) {
 
       finishLeague();
@@ -1131,20 +1222,39 @@
     }
 
 
-    const group =
-      state.leagueMatches[
-        state.leagueIndex
-      ];
+    let group;
+
+
+    /*
+     * まだ今回のグループがない場合
+     * 選択結果をもとに作る
+     */
+    if (
+      state.leagueHistory.length ===
+      state.leagueIndex
+    ) {
+
+      group =
+        createNextLeagueGroup();
+
+    } else {
+
+      group =
+        state.leagueHistory[
+          state.leagueIndex
+        ].group;
+
+    }
 
 
     $("leagueTitle")
       .textContent =
-      `予選通過リーグ ${state.leagueIndex + 1} / ${state.leagueMatches.length}`;
+      `予選通過リーグ ${state.leagueIndex + 1} / ${baseRounds}`;
 
 
     $("leagueBar")
       .style.width =
-      `${(state.leagueIndex / state.leagueMatches.length) * 100}%`;
+      `${(state.leagueIndex / baseRounds) * 100}%`;
 
 
     $("leagueGrid").innerHTML =
@@ -1176,32 +1286,170 @@
     function(id) {
 
       /*
-       * 戻ったときに
-       * 勝敗を取り消せるように
-       * 履歴を保存
+       * 現在表示されている3枚を
+       * 保存しておく
        */
+      const currentGroup =
+        state.leagueHistory[
+          state.leagueIndex
+        ]?.group
+        ||
+        createNextLeagueGroup();
 
-      state.leagueHistory.push({
 
-        matchIndex:
-          state.leagueIndex,
+      /*
+       * 登場回数
+       */
+      currentGroup.forEach(p => {
 
-        selectedId:
-          id
+        state.appearances[p.id] =
+          (state.appearances[p.id] || 0) + 1;
 
       });
 
 
+      /*
+       * 比較回数
+       */
+      for (
+        let i = 0;
+        i < currentGroup.length;
+        i++
+      ) {
+
+        for (
+          let j = i + 1;
+          j < currentGroup.length;
+          j++
+        ) {
+
+          const key =
+            pairKey(
+              currentGroup[i],
+              currentGroup[j]
+            );
+
+          state.pairCounts[key] =
+            (state.pairCounts[key] || 0) + 1;
+
+        }
+
+      }
+
+
+      /*
+       * 勝利数
+       */
       state.wins[id] =
         (state.wins[id] || 0) + 1;
 
 
+      /*
+       * 今回の試行を保存
+       */
+      state.leagueHistory[
+        state.leagueIndex
+      ] = {
+
+        group: currentGroup,
+
+        selectedId: id,
+
+        trioKey:
+          trioKey(currentGroup)
+
+      };
+
+
+      /*
+       * 次へ
+       */
       state.leagueIndex++;
 
 
       showLeague();
 
     };
+
+
+  /* =========================
+     直前のリーグへ戻る
+  ========================= */
+
+  function undoLastLeagueRound() {
+
+    if (
+      state.leagueHistory.length === 0
+    ) {
+
+      return null;
+
+    }
+
+
+    const index =
+      state.leagueHistory.length - 1;
+
+
+    const last =
+      state.leagueHistory[index];
+
+
+    /*
+     * 勝利を取り消す
+     */
+    state.wins[
+      last.selectedId
+    ]--;
+
+
+    /*
+     * 登場回数を戻す
+     */
+    last.group.forEach(p => {
+
+      state.appearances[p.id]--;
+
+    });
+
+
+    /*
+     * ペア比較回数を戻す
+     */
+    for (
+      let i = 0;
+      i < last.group.length;
+      i++
+    ) {
+
+      for (
+        let j = i + 1;
+        j < last.group.length;
+        j++
+      ) {
+
+        const key =
+          pairKey(
+            last.group[i],
+            last.group[j]
+          );
+
+        state.pairCounts[key]--;
+
+      }
+
+    }
+
+
+    state.leagueHistory.pop();
+
+    state.leagueIndex =
+      index;
+
+
+    return last;
+
+  }
 
 
   /* =========================
@@ -1213,6 +1461,9 @@
       "click",
       () => {
 
+        /*
+         * まだ1回も選んでいない場合
+         */
         if (
           state.leagueHistory.length === 0
         ) {
@@ -1235,21 +1486,7 @@
         }
 
 
-        const last =
-          state.leagueHistory.pop();
-
-
-        /*
-         * 直前の勝利を取り消す
-         */
-
-        state.wins[
-          last.selectedId
-        ]--;
-
-        state.leagueIndex =
-          last.matchIndex;
-
+        undoLastLeagueRound();
 
         showLeague();
 
@@ -1268,19 +1505,47 @@
       .add("hidden");
 
 
+    /*
+     * 勝利数が多い順
+     *
+     * 同数の場合は
+     * 比較された回数などを考慮
+     */
     const sorted =
       [...state.finalists].sort(
         (a, b) => {
 
-          const winDiff =
-            (state.wins[b.id] || 0) -
-            (state.wins[a.id] || 0);
+          const winA =
+            state.wins[a.id] || 0;
 
-          if (winDiff !== 0) {
+          const winB =
+            state.wins[b.id] || 0;
 
-            return winDiff;
+
+          if (
+            winA !== winB
+          ) {
+
+            return winB - winA;
 
           }
+
+
+          const appA =
+            state.appearances[a.id] || 0;
+
+          const appB =
+            state.appearances[b.id] || 0;
+
+
+          if (
+            appA !== appB
+          ) {
+
+            return appB - appA;
+
+          }
+
 
           return Math.random() - 0.5;
 
@@ -1291,7 +1556,10 @@
     state.result =
       sorted.slice(
         0,
-        Math.min(9, sorted.length)
+        Math.min(
+          9,
+          sorted.length
+        )
       );
 
 
@@ -1320,7 +1588,6 @@
         const rank =
           i + 1;
 
-
         const wins =
           state.wins[p.id] || 0;
 
@@ -1337,9 +1604,11 @@
 
             ${
               state.finalists.length >= 3
-              ? `<div class="score">
-                   勝利 ${wins}回
-                 </div>`
+              ? `
+                <div class="score">
+                  勝利 ${wins}回
+                </div>
+              `
               : ""
             }
 
@@ -1383,6 +1652,9 @@
 
   /* =========================
      結果 → リーグ
+     
+     直前の試行を取り消して
+     その3枚から選び直す
   ========================= */
 
   $("resultBack")
@@ -1407,6 +1679,18 @@
         $("league")
           .classList
           .remove("hidden");
+
+
+        /*
+         * 最後の試行を1回取り消す
+         */
+        if (
+          state.leagueHistory.length > 0
+        ) {
+
+          undoLastLeagueRound();
+
+        }
 
 
         showLeague();
@@ -1474,6 +1758,10 @@
       }
     );
 
+
+  /* =========================
+     初期化
+  ========================= */
 
   loadPhotos();
 
