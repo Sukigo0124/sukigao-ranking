@@ -101,6 +101,7 @@
       background: #eee;
       padding: 0;
       box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
     }
 
     .photo.selected {
@@ -160,6 +161,13 @@
       background: white;
       overflow: hidden;
       box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+      cursor: pointer;
+      border: none;
+      border-radius: 16px;
+    }
+
+    .league button:hover {
+      opacity: 0.9;
     }
 
     .league img {
@@ -452,6 +460,7 @@
     /* リーグ */
     leagueIndex: 0,
     leagueHistory: [],
+    leagueGroups: [],
 
     /*
      * 各写真の勝利数
@@ -841,6 +850,11 @@
         )
       ).filter(Boolean);
 
+    /* 全て選ばれなかった場合は全て入選 */
+    if (state.finalists.length === 0) {
+      state.finalists = [...state.photos];
+    }
+
   }
 
 
@@ -999,25 +1013,33 @@
         )
         .sort((a, b) => {
 
-          const scoreA =
-            (state.pairCounts[
+          const pairAFirst =
+            state.pairCounts[
               pairKey(first, a)
-            ] || 0)
-            +
-            (state.pairCounts[
-              pairKey(second, a)
-            ] || 0);
+            ] || 0;
 
-          const scoreB =
-            (state.pairCounts[
+          const pairBFirst =
+            state.pairCounts[
               pairKey(first, b)
-            ] || 0)
-            +
-            (state.pairCounts[
-              pairKey(second, b)
-            ] || 0);
+            ] || 0;
 
-          return scoreA - scoreB;
+          const pairASecond =
+            state.pairCounts[
+              pairKey(second, a)
+            ] || 0;
+
+          const pairBSecond =
+            state.pairCounts[
+              pairKey(second, b)
+            ] || 0;
+
+          const totalA =
+            pairAFirst + pairASecond;
+
+          const totalB =
+            pairBFirst + pairBSecond;
+
+          return totalA - totalB;
 
         });
 
@@ -1025,100 +1047,7 @@
     const third =
       thirdCandidates[0];
 
-
-    let group =
-      [first, second, third];
-
-
-    /*
-     * できるだけ同じ3人組を避ける
-     */
-    const key =
-      trioKey(group);
-
-
-    const previousKeys =
-      state.leagueHistory.map(
-        h => h.trioKey
-      );
-
-
-    if (
-      previousKeys.includes(key)
-    ) {
-
-      const alternatives =
-        shuffle(
-          players.filter(
-            p =>
-              !group.some(
-                x => x.id === p.id
-              )
-          )
-        );
-
-
-      for (
-        const alt of alternatives
-      ) {
-
-        const test =
-          [
-            first,
-            second,
-            alt
-          ];
-
-
-        const testKey =
-          trioKey(test);
-
-
-        if (
-          !previousKeys.includes(
-            testKey
-          )
-        ) {
-
-          group = test;
-
-          break;
-
-        }
-
-      }
-
-    }
-
-
-    return shuffle(group);
-
-  }
-
-
-  /* =========================
-     リーグ初期化
-  ========================= */
-
-  function initializeLeague() {
-
-    state.leagueIndex = 0;
-
-    state.leagueHistory = [];
-
-    state.wins = {};
-
-    state.appearances = {};
-
-    state.pairCounts = {};
-
-    state.finalists.forEach(p => {
-
-      state.wins[p.id] = 0;
-
-      state.appearances[p.id] = 0;
-
-    });
+    return [first, second, third];
 
   }
 
@@ -1129,54 +1058,26 @@
 
   function startLeague() {
 
+    state.leagueIndex = 0;
+    state.leagueHistory = [];
+    state.leagueGroups = [];
+
+    state.finalists.forEach(p => {
+      state.wins[p.id] = 0;
+      state.appearances[p.id] = 0;
+    });
+
     $("qualify")
       .classList
       .add("hidden");
 
-
-    /*
-     * 誰も選ばれなかった
-     */
-    if (
-      state.finalists.length === 0
-    ) {
-
-      state.result = [];
-
-      showFinalResult([]);
-
-      return;
-
-    }
-
-
-    /*
-     * 1～2枚なら比較できないため
-     * そのまま表示
-     */
-    if (
-      state.finalists.length < 3
-    ) {
-
-      state.result =
-        [...state.finalists];
-
-      showFinalResult(
-        state.result
-      );
-
-      return;
-
-    }
-
-
-    initializeLeague();
-
+    $("result")
+      .classList
+      .add("hidden");
 
     $("league")
       .classList
       .remove("hidden");
-
 
     showLeague();
 
@@ -1189,87 +1090,41 @@
 
   function showLeague() {
 
-    /*
-     * 十分な試行をしたら終了
-     *
-     * 基本回数は
-     * 予選通過人数に応じて増える
-     */
-    const baseRounds =
-      Math.max(
-        15,
-        Math.min(
-          45,
-          state.finalists.length * 3
-        )
-      );
+    const group =
+      createNextLeagueGroup();
 
+    state.leagueGroups.push(group);
 
-    /*
-     * 最後の方は、
-     * 選択結果がある程度固まったら終了。
-     *
-     * ただし最低15回は行う。
-     */
-    if (
-      state.leagueIndex >= baseRounds
-    ) {
-
-      finishLeague();
-
-      return;
-
-    }
-
-
-    let group;
-
-
-    /*
-     * まだ今回のグループがない場合
-     * 選択結果をもとに作る
-     */
-    if (
-      state.leagueHistory.length ===
-      state.leagueIndex
-    ) {
-
-      group =
-        createNextLeagueGroup();
-
-    } else {
-
-      group =
-        state.leagueHistory[
-          state.leagueIndex
-        ].group;
-
-    }
-
+    const trio = trioKey(group);
 
     $("leagueTitle")
       .textContent =
-      `予選通過リーグ ${state.leagueIndex + 1} / ${baseRounds}`;
+      `予選通過リーグ - ${state.leagueIndex + 1}試行目`;
 
+    const totalAppearances =
+      Object.values(state.appearances)
+        .reduce((a, b) => a + b, 0);
+
+    const recommendedRounds =
+      Math.ceil(
+        state.finalists.length * 2
+      );
 
     $("leagueBar")
       .style.width =
-      `${(state.leagueIndex / baseRounds) * 100}%`;
-
+      `${Math.min(
+        (state.leagueIndex /
+          recommendedRounds) * 100,
+        100
+      )}%`;
 
     $("leagueGrid").innerHTML =
 
       group.map(p => `
 
-        <button
-          onclick="chooseLeague(${p.id})"
-        >
+        <button onclick="selectWinner(${p.id})">
 
           <img src="${p.url}">
-
-          <div class="label">
-            選ぶ
-          </div>
 
         </button>
 
@@ -1279,175 +1134,105 @@
 
 
   /* =========================
-     リーグ選択
+     リーグ 選択
   ========================= */
 
-  window.chooseLeague =
+  window.selectWinner =
     function(id) {
 
-      /*
-       * 現在表示されている3枚を
-       * 保存しておく
-       */
-      const currentGroup =
-        state.leagueHistory[
+      const group =
+        state.leagueGroups[
           state.leagueIndex
-        ]?.group
-        ||
-        createNextLeagueGroup();
+        ];
 
-
-      /*
-       * 登場回数
-       */
-      currentGroup.forEach(p => {
-
-        state.appearances[p.id] =
-          (state.appearances[p.id] || 0) + 1;
-
-      });
-
-
-      /*
-       * 比較回数
-       */
-      for (
-        let i = 0;
-        i < currentGroup.length;
-        i++
-      ) {
-
-        for (
-          let j = i + 1;
-          j < currentGroup.length;
-          j++
-        ) {
-
-          const key =
-            pairKey(
-              currentGroup[i],
-              currentGroup[j]
-            );
-
-          state.pairCounts[key] =
-            (state.pairCounts[key] || 0) + 1;
-
-        }
-
-      }
-
-
-      /*
-       * 勝利数
-       */
       state.wins[id] =
         (state.wins[id] || 0) + 1;
 
+      group.forEach(p => {
+        state.appearances[p.id] =
+          (state.appearances[p.id] || 0) + 1;
+      });
 
-      /*
-       * 今回の試行を保存
-       */
-      state.leagueHistory[
-        state.leagueIndex
-      ] = {
+      group.forEach(p1 => {
+        group.forEach(p2 => {
+          if (p1.id < p2.id) {
+            const key = pairKey(p1, p2);
+            state.pairCounts[key] =
+              (state.pairCounts[key] || 0) + 1;
+          }
+        });
+      });
 
-        group: currentGroup,
+      state.leagueHistory.push({
+        round: state.leagueIndex,
+        group: group,
+        selected: id
+      });
 
-        selectedId: id,
-
-        trioKey:
-          trioKey(currentGroup)
-
-      };
-
-
-      /*
-       * 次へ
-       */
       state.leagueIndex++;
 
+      /* 十分な比較ができたか判定 */
+      if (shouldEndLeague()) {
 
-      showLeague();
+        finishLeague();
+
+      } else {
+
+        showLeague();
+
+      }
 
     };
 
 
   /* =========================
-     直前のリーグへ戻る
+     リーグ終了判定
   ========================= */
 
-  function undoLastLeagueRound() {
+  function shouldEndLeague() {
 
+    const finalistCount =
+      state.finalists.length;
+
+    const recommendedRounds =
+      Math.ceil(
+        finalistCount * 2
+      );
+
+    /* 最小試行回数に達した */
     if (
-      state.leagueHistory.length === 0
+      state.leagueIndex <
+      recommendedRounds * 0.8
     ) {
 
-      return null;
+      return false;
 
     }
 
+    /* 全ての比較が十分か */
+    let allSufficient = true;
 
-    const index =
-      state.leagueHistory.length - 1;
-
-
-    const last =
-      state.leagueHistory[index];
-
-
-    /*
-     * 勝利を取り消す
-     */
-    state.wins[
-      last.selectedId
-    ]--;
-
-
-    /*
-     * 登場回数を戻す
-     */
-    last.group.forEach(p => {
-
-      state.appearances[p.id]--;
-
-    });
-
-
-    /*
-     * ペア比較回数を戻す
-     */
     for (
       let i = 0;
-      i < last.group.length;
+      i < finalistCount;
       i++
     ) {
 
-      for (
-        let j = i + 1;
-        j < last.group.length;
-        j++
-      ) {
+      const appearances =
+        state.appearances[
+          state.finalists[i].id
+        ] || 0;
 
-        const key =
-          pairKey(
-            last.group[i],
-            last.group[j]
-          );
+      if (appearances < 3) {
 
-        state.pairCounts[key]--;
+        allSufficient = false;
+        break;
 
       }
 
     }
 
-
-    state.leagueHistory.pop();
-
-    state.leagueIndex =
-      index;
-
-
-    return last;
+    return allSufficient;
 
   }
 
@@ -1461,34 +1246,49 @@
       "click",
       () => {
 
-        /*
-         * まだ1回も選んでいない場合
-         */
         if (
-          state.leagueHistory.length === 0
+          state.leagueHistory.length > 0
         ) {
+
+          const last =
+            state.leagueHistory.pop();
+
+          state.wins[last.selected]--;
+
+          last.group.forEach(p => {
+            state.appearances[p.id]--;
+          });
+
+          last.group.forEach(p1 => {
+            last.group.forEach(p2 => {
+              if (p1.id < p2.id) {
+                const key = pairKey(p1, p2);
+                state.pairCounts[key]--;
+              }
+            });
+          });
+
+          state.leagueIndex--;
+          state.leagueGroups.pop();
+
+          showLeague();
+
+        } else {
 
           $("league")
             .classList
             .add("hidden");
 
+          state.qualifyIndex =
+            state.qualifyGroups.length - 1;
+
           $("qualify")
             .classList
             .remove("hidden");
 
-          state.qualifyIndex =
-            state.qualifyGroups.length - 1;
-
           showQualify();
 
-          return;
-
         }
-
-
-        undoLastLeagueRound();
-
-        showLeague();
 
       }
     );
@@ -1500,72 +1300,23 @@
 
   function finishLeague() {
 
+    state.result =
+      state.finalists
+        .sort(
+          (a, b) =>
+            (state.wins[b.id] || 0) -
+            (state.wins[a.id] || 0)
+        );
+
     $("league")
       .classList
       .add("hidden");
 
+    $("result")
+      .classList
+      .remove("hidden");
 
-    /*
-     * 勝利数が多い順
-     *
-     * 同数の場合は
-     * 比較された回数などを考慮
-     */
-    const sorted =
-      [...state.finalists].sort(
-        (a, b) => {
-
-          const winA =
-            state.wins[a.id] || 0;
-
-          const winB =
-            state.wins[b.id] || 0;
-
-
-          if (
-            winA !== winB
-          ) {
-
-            return winB - winA;
-
-          }
-
-
-          const appA =
-            state.appearances[a.id] || 0;
-
-          const appB =
-            state.appearances[b.id] || 0;
-
-
-          if (
-            appA !== appB
-          ) {
-
-            return appB - appA;
-
-          }
-
-
-          return Math.random() - 0.5;
-
-        }
-      );
-
-
-    state.result =
-      sorted.slice(
-        0,
-        Math.min(
-          9,
-          sorted.length
-        )
-      );
-
-
-    showFinalResult(
-      state.result
-    );
+    showResult();
 
   }
 
@@ -1574,87 +1325,34 @@
      結果表示
   ========================= */
 
-  function showFinalResult(result) {
-
-    $("result")
-      .classList
-      .remove("hidden");
-
+  function showResult() {
 
     $("ranking").innerHTML =
 
-      result.map((p, i) => {
-
-        const rank =
-          i + 1;
-
-        const wins =
-          state.wins[p.id] || 0;
-
-
-        return `
+      state.result
+        .map((p, index) => `
 
           <div class="resultCard">
 
             <img src="${p.url}">
 
             <div class="rankText">
-              ${rank}位
+              🏆 ${index + 1}位
             </div>
 
-            ${
-              state.finalists.length >= 3
-              ? `
-                <div class="score">
-                  勝利 ${wins}回
-                </div>
-              `
-              : ""
-            }
+            <div class="score">
+              勝利数: ${state.wins[p.id] || 0}
+            </div>
 
           </div>
 
-        `;
-
-      }).join("");
-
-
-    if (
-      result.length === 0
-    ) {
-
-      $("ranking").innerHTML = `
-
-        <div
-          style="
-            grid-column:1/-1;
-            text-align:center;
-            padding:30px;
-          "
-        >
-
-          <b>
-            今回は写真が選ばれませんでした
-          </b>
-
-          <p class="info">
-            もう一度ランキングを開始してください。
-          </p>
-
-        </div>
-
-      `;
-
-    }
+        `).join("");
 
   }
 
 
   /* =========================
-     結果 → リーグ
-     
-     直前の試行を取り消して
-     その3枚から選び直す
+     結果 リーグに戻る
   ========================= */
 
   $("resultBack")
@@ -1662,45 +1360,20 @@
       "click",
       () => {
 
-        if (
-          state.finalists.length < 3
-        ) {
-
-          return;
-
-        }
-
-
         $("result")
           .classList
           .add("hidden");
 
-
         $("league")
           .classList
           .remove("hidden");
-
-
-        /*
-         * 最後の試行を1回取り消す
-         */
-        if (
-          state.leagueHistory.length > 0
-        ) {
-
-          undoLastLeagueRound();
-
-        }
-
-
-        showLeague();
 
       }
     );
 
 
   /* =========================
-     最初から
+     結果 もう一度やる
   ========================= */
 
   $("retry")
@@ -1708,52 +1381,25 @@
       "click",
       () => {
 
+        state.qualifyGroups = [];
+        state.qualifyIndex = 0;
+        state.qualifySelections = [];
+        state.finalists = [];
+        state.leagueIndex = 0;
+        state.leagueHistory = [];
+        state.leagueGroups = [];
+        state.wins = {};
+        state.appearances = {};
+        state.pairCounts = {};
+        state.result = [];
+
         $("result")
-          .classList
-          .add("hidden");
-
-        $("league")
-          .classList
-          .add("hidden");
-
-        $("qualify")
           .classList
           .add("hidden");
 
         $("home")
           .classList
           .remove("hidden");
-
-
-        loadPhotos();
-
-      }
-    );
-
-
-  /* =========================
-     開始
-  ========================= */
-
-  $("startButton")
-    .addEventListener(
-      "click",
-      () => {
-
-        if (
-          state.photos.length < 3
-        ) {
-
-          alert(
-            "写真を3枚以上登録してください。"
-          );
-
-          return;
-
-        }
-
-
-        startQualify();
 
       }
     );
@@ -1763,7 +1409,16 @@
      初期化
   ========================= */
 
-  loadPhotos();
+  $("startButton")
+    .addEventListener(
+      "click",
+      () => {
+
+        loadPhotos();
+        startQualify();
+
+      }
+    );
 
 </script>
 
